@@ -1,4 +1,7 @@
-const MANIFEST_URL = "./data/cards/index.json";
+// Base "data/cards/" calculée depuis l'emplacement réel du fichier JS.
+// app.js est dans /assets/js/ → on remonte de 2 niveaux vers / puis /data/cards/
+const DATA_DIR = new URL("../../data/cards/", import.meta.url);
+const MANIFEST_URL = new URL("index.json", DATA_DIR);
 
 function $(id) {
   return document.getElementById(id);
@@ -17,7 +20,6 @@ function safeText(value) {
   return s.length ? s : "—";
 }
 
-// Sécurité basique : éviter d’injecter du HTML via les JSON
 function escapeHTML(str) {
   return String(str)
     .replaceAll("&", "&amp;")
@@ -32,7 +34,6 @@ function cardHTML({ id, nom, prenom, age }) {
   const _nom = escapeHTML(safeText(nom));
   const _prenom = escapeHTML(safeText(prenom));
   const _age = escapeHTML(safeText(age));
-
   const title = `${_prenom} ${_nom}`.trim() || "—";
 
   return `
@@ -58,9 +59,14 @@ function cardHTML({ id, nom, prenom, age }) {
   `;
 }
 
-async function fetchJSON(url) {
+async function fetchJSON(urlObj) {
+  const url = urlObj.toString();
   const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error(`HTTP ${res.status} sur ${url}`);
+
+  if (!res.ok) {
+    // On donne un message "debuggable" direct
+    throw new Error(`Fetch failed: HTTP ${res.status} on ${res.url}`);
+  }
   return res.json();
 }
 
@@ -69,20 +75,19 @@ async function loadAndRenderAllCards() {
   if (!container) return;
 
   try {
-    setStatus("Chargement du manifest…");
+    setStatus(`Chargement du manifest… (${MANIFEST_URL})`);
 
     const manifest = await fetchJSON(MANIFEST_URL);
     const cards = Array.isArray(manifest?.cards) ? manifest.cards : [];
 
     if (cards.length === 0) {
       container.innerHTML = "";
-      setStatus("Aucune carte dans index.json (cards est vide).", true);
+      setStatus('Aucune carte: "cards" est vide dans index.json.', true);
       return;
     }
 
     setStatus(`Manifest OK — ${cards.length} carte(s) à charger…`);
 
-    // Charge toutes les cartes en parallèle
     const results = await Promise.allSettled(
       cards.map(async (entry) => {
         const id = entry?.id ?? "—";
@@ -90,7 +95,7 @@ async function loadAndRenderAllCards() {
 
         if (!file) throw new Error(`Entrée sans "file" (id=${id})`);
 
-        const dataUrl = `./data/cards/${file}`;
+        const dataUrl = new URL(file, DATA_DIR);
         const data = await fetchJSON(dataUrl);
 
         return {
@@ -110,19 +115,18 @@ async function loadAndRenderAllCards() {
       else ko.push(r.reason);
     }
 
-    // Render
     container.innerHTML = ok.map(cardHTML).join("");
 
     if (ko.length > 0) {
-      console.error("Erreurs de chargement:", ko);
-      setStatus(`Chargé: ${ok.length} / ${results.length}. Certaines cartes ont échoué (voir console).`, true);
+      console.error("Card load errors:", ko);
+      setStatus(`Chargé: ${ok.length}/${results.length}. Certaines cartes ont échoué (console).`, true);
     } else {
-      setStatus(`Chargé: ${ok.length} / ${results.length} ✅`);
+      setStatus(`Chargé: ${ok.length}/${results.length} ✅`);
     }
   } catch (err) {
     console.error(err);
     $("cards").innerHTML = "";
-    setStatus("Erreur: impossible de charger index.json. Vérifie le chemin et le JSON.", true);
+    setStatus(`Erreur: ${err.message}`, true);
   }
 }
 
