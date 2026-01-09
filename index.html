@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cartes d'identité — Prototype</title>
+  <link rel="stylesheet" href="./assets/css/styles.css" />
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <h1>Cartes d'identité</h1>
+      <p class="subtitle">Prototype HTML/CSS — données bientôt branchées via JSON</p>
+    </header>
+
+    <section class="grid">
+      <!-- Carte (pour l’instant statique) -->
+      <article class="card">
+        <div class="card__badge">ID • 001</div>
+        <h2 class="card__title">Nom Prénom</h2>
+
+        <dl class="card__meta">
+          <div class="meta__row">
+            <dt>Nom</dt>
+            <dd>Dupont</dd>
+          </div>
+          <div class="meta__row">
+            <dt>Prénom</dt>
+            <dd>Marie</dd>
+          </div>
+          <div class="meta__row">
+            <dt>Âge</dt>
+            <dd>27</dd>
+          </div>
+        </dl>
+      </article>
+    </section>
+
+    <footer class="footer">
+      <p>Next step: charger automatiquement les données depuis <code>/data/cards/*.json</code>.</p>
+    </footer>
+  </main>
+</body>
+</html>
