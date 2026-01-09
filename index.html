@@ -10,36 +10,17 @@
   <main class="page">
     <header class="header">
       <h1>Cartes d'identité</h1>
-      <p class="subtitle">Prototype HTML/CSS — données chargées via JSON</p>
+      <p class="subtitle">UI pilotée par JSON — tu ajoutes des fichiers, l’app s’enrichit.</p>
+      <p class="status" id="status">Initialisation…</p>
     </header>
 
-    <section class="grid">
-      <article class="card" id="card">
-        <div class="card__badge" id="card-badge">ID • 001</div>
-        <h2 class="card__title" id="card-title">—</h2>
-
-        <dl class="card__meta">
-          <div class="meta__row">
-            <dt>Nom</dt>
-            <dd id="field-nom">—</dd>
-          </div>
-          <div class="meta__row">
-            <dt>Prénom</dt>
-            <dd id="field-prenom">—</dd>
-          </div>
-          <div class="meta__row">
-            <dt>Âge</dt>
-            <dd id="field-age">—</dd>
-          </div>
-        </dl>
-
-        <p class="footer" id="status" style="margin:14px 0 0;">Chargement des données…</p>
-      </article>
+    <section class="grid" id="cards">
+      <!-- Les cartes sont injectées ici par assets/js/app.js -->
     </section>
 
     <footer class="footer">
       <p>
-        Next step: générer automatiquement plusieurs cartes depuis <code>/data/cards</code>.
+        Source de vérité : <code>/data/cards/index.json</code> → liste des fichiers JSON à charger.
       </p>
     </footer>
   </main>
