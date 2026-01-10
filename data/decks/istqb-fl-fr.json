@@ -21,7 +21,7 @@
       "keywords": ["test", "qualité", "risque", "confiance", "décision"],
       "image": {
         "src": "assets/images/istqb-fl-fr/001.webp",
-        "alt": "Illustration du concept de test : exécution, observation, comparaison au résultat attendu."
+        "alt": "Illustration du concept de test"
       }
     },
     {
@@ -56,7 +56,6 @@
       "keywords": ["cas de test", "résultat attendu", "précondition", "postcondition"],
       "image": null
     },
-
     {
       "id": "004",
       "chapter": 1,
@@ -137,7 +136,6 @@
       "keywords": ["test", "debug", "responsabilités", "retest"],
       "image": null
     },
-
     {
       "id": "009",
       "chapter": 1,
@@ -186,7 +184,6 @@
       "keywords": ["cause racine", "RCA", "amélioration continue", "process"],
       "image": null
     },
-
     {
       "id": "012",
       "chapter": 1,
@@ -299,7 +296,6 @@
       "keywords": ["valeur", "usage", "adéquation", "succès produit"],
       "image": null
     },
-
     {
       "id": "019",
       "chapter": 1,
@@ -332,7 +328,6 @@
       "keywords": ["adaptation", "risque", "contraintes", "cycle de vie"],
       "image": null
     },
-
     {
       "id": "021",
       "chapter": 1,
@@ -365,7 +360,6 @@
       "keywords": ["traçabilité", "couverture", "impact analysis", "audit"],
       "image": null
     },
-
     {
       "id": "023",
       "chapter": 1,
