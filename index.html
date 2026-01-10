@@ -3,24 +3,61 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Cartes d'identité — Prototype</title>
+  <title>Cartes de révision</title>
   <link rel="stylesheet" href="./assets/css/styles.css" />
 </head>
+
 <body>
   <main class="page">
+    <!-- Header / Branding -->
     <header class="header">
-      <h1>Cartes d'identité</h1>
-      <p class="subtitle">UI pilotée par JSON — tu ajoutes des fichiers, l’app s’enrichit.</p>
-      <p class="status" id="status">Initialisation…</p>
+      <h1>Cartes de révision</h1>
+      <p class="subtitle">
+        Application statique (GitHub Pages), pensée mobile-first : révise partout, tout le temps.
+      </p>
+
+      <!-- Contrôles (deck selection) -->
+      <section class="toolbar" aria-label="Contrôles de révision">
+        <div class="toolbar__group">
+          <label class="toolbar__label" for="deck-select">Deck</label>
+          <select id="deck-select" class="toolbar__select" disabled>
+            <option selected>Chargement…</option>
+          </select>
+        </div>
+
+        <div class="toolbar__group toolbar__group--right">
+          <button id="btn-random" class="toolbar__button" type="button" disabled>
+            Aléatoire
+          </button>
+          <button id="btn-next" class="toolbar__button toolbar__button--primary" type="button" disabled>
+            Suivant
+          </button>
+        </div>
+      </section>
+
+      <!-- Status / Observabilité -->
+      <p class="status" id="status" aria-live="polite">
+        Initialisation…
+      </p>
     </header>
 
-    <section class="grid" id="cards">
-      <!-- Les cartes sont injectées ici par assets/js/app.js -->
+    <!-- Zone de rendu (JS injecte ici les cartes) -->
+    <section class="grid" id="cards" aria-label="Cartes">
+      <!-- À ce stade, le JS injecte le contenu ici -->
+      <noscript>
+        <article class="card">
+          <h2 class="card__title">JavaScript requis</h2>
+          <p class="card__text">
+            Cette application charge les cartes depuis des fichiers JSON. Active JavaScript pour continuer.
+          </p>
+        </article>
+      </noscript>
     </section>
 
     <footer class="footer">
       <p>
-        Source de vérité : <code>/data/cards/index.json</code> → liste des fichiers JSON à charger.
+        Objectif : decks thématiques → cartes (notion, définition, exemple, image).
+        Prochaine étape : brancher la sélection de deck + un nouveau modèle JSON.
       </p>
     </footer>
   </main>
