@@ -1,20 +1,11 @@
 /**
- * App de révision (statique) — refonte
- * Source unique : data/decks/index.json -> deck.json -> cards[]
+ * App de révision (statique) — refonte + coverage visible
+ * Source : data/decks/index.json -> deck.json -> cards[]
  *
- * + Contrôle de complétude (coverage):
- * - Pour un deck id = X, le JS tente de charger data/decks/X.ref.json
- * - ref.expected[] = liste des clés attendues (ex: LO ISTQB "FL-1.1.1")
- * - matching par défaut:
- *    - si expected ressemble à des LO (commence par "FL-"), on match sur card.lo
- *    - sinon, on match sur card.id
- *
- * UI :
- * - sélection deck
- * - suivant
- * - aléatoire
- * - badge par carte : ✅ référencée / ⚠️ hors ref / ⛔ pas de ref
- * - status : Couverture X/Y (+ manquants)
+ * Coverage:
+ * - charge data/decks/<deckId>.ref.json
+ * - expected[] = clés attendues (LO ISTQB)
+ * - match sur card.lo si expected commence par "FL-"
  */
 
 // Base URLs robustes (GitHub Pages friendly)
@@ -39,6 +30,19 @@ function setStatus(message, isError = false) {
   el.dataset.state = isError ? "error" : "ok";
 }
 
+function setAudit(message, visible) {
+  const el = $("audit");
+  if (!el) return;
+  if (!visible) {
+    el.hidden = true;
+    el.textContent = "";
+    return;
+  }
+  el.hidden = false;
+  // message peut contenir du texte simple → on reste safe via textContent
+  el.textContent = message;
+}
+
 function setControlsEnabled(enabled) {
   const deckSelect = $("deck-select");
   const btnNext = $("btn-next");
@@ -55,7 +59,6 @@ function safeText(value) {
   return s.length ? s : "—";
 }
 
-// Sécurité : on injecte via innerHTML => on échappe tout texte venant des JSON
 function escapeHTML(str) {
   return String(str)
     .replaceAll("&", "&amp;")
@@ -71,12 +74,6 @@ async function fetchJSON(urlObj) {
   return res.json();
 }
 
-/**
- * Normalize deck to a minimal internal model.
- * Accepts both:
- * - new format: { cards: [{ notion, explication, exemple, lo? }] }
- * - compat: old: { cards: [{ notion, definition, exemple }] }
- */
 function normalizeDeck(rawDeck, fallbackId = "deck") {
   const id = safeText(rawDeck?.id) !== "—" ? String(rawDeck.id) : fallbackId;
   const title = safeText(rawDeck?.title) !== "—" ? String(rawDeck.title) : "Deck";
@@ -88,18 +85,12 @@ function normalizeDeck(rawDeck, fallbackId = "deck") {
     const cardId = safeText(c?.id) !== "—" ? String(c.id) : String(idx + 1).padStart(3, "0");
 
     const notion = safeText(c?.notion);
-
-    // Nouveau champ cible = explication
-    // Compat: ancien deck peut encore avoir "definition"
     const explication = safeText(c?.explication ?? c?.definition);
-
     const exemple = safeText(c?.exemple);
 
-    // Clé de complétude (optionnelle) : LO ISTQB (recommandé)
     const lo = safeText(c?.lo);
     const loOrNull = lo !== "—" ? lo : null;
 
-    // image optionnelle au niveau carte
     const imageSrc = c?.image?.src ? String(c.image.src).trim() : "";
     const imageAlt = c?.image?.alt ? String(c.image.alt).trim() : "";
 
@@ -126,14 +117,9 @@ function resolveCardImage(card) {
   return DEFAULT_CARD_IMAGE;
 }
 
-/**
- * Coverage model (chargé depuis X.ref.json)
- */
 function normalizeRef(rawRef) {
   const expected = Array.isArray(rawRef?.expected) ? rawRef.expected.map(String) : [];
   const expectedClean = expected.map((x) => x.trim()).filter(Boolean);
-
-  // Heuristique : si au moins 1 entrée ressemble à un LO ISTQB, on match sur card.lo
   const matchMode = expectedClean.some((x) => x.startsWith("FL-")) ? "lo" : "id";
 
   return {
@@ -190,8 +176,7 @@ function computeCoverage(deck, ref) {
 
 function coverageBadgeText(coverage, card) {
   if (!coverage.hasRef) return "⛔ REF absent";
-  const ok = coverage.cardIsReferenced(card);
-  return ok ? "✅ Référencée" : "⚠️ Hors ref";
+  return coverage.cardIsReferenced(card) ? "✅ Référencée" : "⚠️ Hors ref";
 }
 
 function cardHTML(deck, card, positionText, coverage) {
@@ -203,17 +188,16 @@ function cardHTML(deck, card, positionText, coverage) {
   const exemple = escapeHTML(safeText(card?.exemple));
 
   const pos = escapeHTML(safeText(positionText));
+  const badge = escapeHTML(coverageBadgeText(coverage, card));
 
   const img = resolveCardImage(card);
   const imgSrc = escapeHTML(img.src);
   const imgAlt = escapeHTML(img.alt);
 
-  const badge = escapeHTML(coverageBadgeText(coverage, card));
-
-  // Si matchMode = lo, on montre le lo (utile pour audit, sans polluer)
-  const loPart = coverage.hasRef && coverage.matchMode === "lo" && card?.lo
-    ? ` • LO ${escapeHTML(card.lo)}`
-    : "";
+  const loPart =
+    coverage.hasRef && coverage.matchMode === "lo" && card?.lo
+      ? ` • LO ${escapeHTML(card.lo)}`
+      : "";
 
   return `
     <article class="card">
@@ -254,6 +238,7 @@ function renderSingleCard(deck, cardIndex, coverage) {
       </article>
     `;
     setStatus("Deck chargé, mais vide.", true);
+    setAudit("", false);
     setControlsEnabled(false);
     return;
   }
@@ -266,6 +251,7 @@ function renderSingleCard(deck, cardIndex, coverage) {
 
   if (!coverage.hasRef) {
     setStatus(`Deck: ${deck.title} — carte ${posText} • Couverture: (ref absente)`, true);
+    setAudit("Référence absente : ajoute le fichier <deckId>.ref.json pour activer le contrôle.", true);
   } else {
     const missingCount = coverage.missing.length;
     const coverageText = `Couverture: ${coverage.coveredCount}/${coverage.expectedTotal}`;
@@ -277,6 +263,12 @@ function renderSingleCard(deck, cardIndex, coverage) {
           : " ✅";
 
     setStatus(`Deck: ${deck.title} — carte ${posText} • ${coverageText}${hint}`, missingCount > 0);
+
+    if (missingCount > 0) {
+      setAudit(`Manquants (${missingCount}) : ${coverage.missing.join(", ")}`, true);
+    } else {
+      setAudit("Deck complet ✅ (tous les objectifs attendus sont couverts)", true);
+    }
   }
 
   setControlsEnabled(true);
@@ -308,9 +300,7 @@ async function loadDeckCatalog() {
   const decksIndex = await fetchJSON(DECKS_INDEX_URL);
   const decks = Array.isArray(decksIndex?.decks) ? decksIndex.decks : [];
 
-  if (decks.length === 0) {
-    throw new Error('Deck catalog vide (champ "decks").');
-  }
+  if (decks.length === 0) throw new Error('Deck catalog vide (champ "decks").');
 
   return decks
     .map((d) => ({
@@ -328,13 +318,11 @@ async function loadDeckFile(deckMeta) {
 }
 
 async function tryLoadDeckRef(deckId) {
-  // Convention: data/decks/<deckId>.ref.json
   const refUrl = new URL(`${deckId}.ref.json`, DECKS_DIR);
   try {
     const rawRef = await fetchJSON(refUrl);
     return normalizeRef(rawRef);
   } catch (err) {
-    // Ref absente = OK (mode sans contrôle)
     console.warn(`Ref file not found for deck "${deckId}" (${refUrl}):`, err);
     return null;
   }
@@ -357,6 +345,7 @@ function fillDeckSelect(options, selectedId) {
 document.addEventListener("DOMContentLoaded", async () => {
   setControlsEnabled(false);
   setStatus("Chargement…");
+  setAudit("", false);
 
   const deckSelect = $("deck-select");
   const btnNext = $("btn-next");
@@ -366,8 +355,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   let currentDeck = null;
   let currentIndex = 0;
 
-  // Coverage state
-  let currentRef = null;
   let currentCoverage = {
     hasRef: false,
     matchMode: null,
@@ -382,17 +369,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     currentDeck = await loadDeckFile(meta);
 
-    // Charger la ref (si présente)
-    currentRef = await tryLoadDeckRef(currentDeck.id);
-    currentCoverage = computeCoverage(currentDeck, currentRef);
-
-    // Debug utile (sans UI intrusive)
-    if (currentCoverage.hasRef && currentCoverage.missing.length > 0) {
-      console.warn(
-        `[COVERAGE] Deck ${currentDeck.id}: missing ${currentCoverage.missing.length}/${currentCoverage.expectedTotal}`,
-        currentCoverage.missing
-      );
-    }
+    const ref = await tryLoadDeckRef(currentDeck.id);
+    currentCoverage = computeCoverage(currentDeck, ref);
 
     currentIndex = Math.max(0, Math.min(loadSavedIndex(currentDeck.id), currentDeck.cards.length - 1));
     renderSingleCard(currentDeck, currentIndex, currentCoverage);
@@ -403,12 +381,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       const id = e.target.value;
       setControlsEnabled(false);
       setStatus("Changement de deck…");
+      setAudit("", false);
 
       try {
         await loadDeckById(id);
       } catch (err) {
         console.error(err);
         setStatus(`Erreur: ${err.message}`, true);
+        setAudit("Erreur de chargement : vérifie le catalogue et les fichiers JSON.", true);
       }
     });
   }
@@ -440,10 +420,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   try {
     decksMeta = await loadDeckCatalog();
-
     const selectedId = decksMeta[0].id;
-    fillDeckSelect(decksMeta, selectedId);
 
+    fillDeckSelect(decksMeta, selectedId);
     await loadDeckById(selectedId);
   } catch (err) {
     console.error(err);
@@ -451,11 +430,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       <article class="card">
         <h2 class="card__title">Impossible de charger les decks</h2>
         <p class="card__text">
-          Vérifie <code>data/decks/index.json</code> et le fichier deck référencé.
+          Vérifie <code>data/decks/index.json</code> et les fichiers deck référencés.
         </p>
       </article>
     `;
     setStatus(`Erreur: ${err.message}`, true);
+    setAudit("Aucun deck chargé : vérifie les chemins et le JSON.", true);
     setControlsEnabled(false);
   }
 });
