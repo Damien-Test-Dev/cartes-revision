@@ -13,6 +13,11 @@
   --space-2: 12px;
   --space-3: 16px;
   --space-4: 22px;
+
+  /* Taille cible de l’image de carte (UX révision) */
+  --img-h-mobile: 180px;
+  --img-h-tablet: 220px;
+  --img-h-desktop: 260px;
 }
 
 * { box-sizing: border-box; }
@@ -31,20 +36,20 @@ body {
 
   color: var(--text);
 
-  /* Mode "app" : pas de scroll global, on gère le scroll dans la zone centrale */
+  /* Mode "app" : scroll géré dans la zone centrale */
   overflow: hidden;
 }
 
-/* PAGE = colonne : header / zone cartes (flex) / footer */
+/* PAGE = header / zone cartes (flex) / footer */
 .page {
   max-width: 1040px;
   margin: 0 auto;
 
-  height: 100vh;           /* la page occupe le viewport */
+  height: 100vh;
   display: flex;
   flex-direction: column;
 
-  padding: 28px 16px 18px; /* bottom plus petit car footer est dans le flux */
+  padding: 28px 16px 18px;
   gap: var(--space-3);
 }
 
@@ -137,12 +142,12 @@ body {
   border-color: rgba(255,180,180,0.35);
 }
 
-/* ZONE CARTES = zone centrale qui s'adapte + scroll interne si nécessaire */
+/* ZONE CARTES */
 .grid {
-  flex: 1;                 /* prend tout l'espace restant */
-  min-height: 0;           /* CRITIQUE pour que overflow fonctionne en flex */
-  overflow: auto;          /* scroll ici si la carte est plus haute */
-  padding-bottom: 2px;     /* micro padding pour éviter effet "coupé" */
+  flex: 1;
+  min-height: 0;   /* critique pour overflow en flex */
+  overflow: auto;  /* scroll interne */
+  padding-bottom: 2px;
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--space-3);
@@ -177,13 +182,6 @@ body {
   line-height: 1.2;
 }
 
-.card__text {
-  margin: 0;
-  color: var(--text);
-  opacity: 0.95;
-  line-height: 1.45;
-}
-
 /* Media */
 .card__media {
   margin: 12px 0 14px;
@@ -193,12 +191,16 @@ body {
   background: rgba(255,255,255,0.02);
 }
 
+/* ✅ FIX: image cadrée (ne prend plus tout l’écran) */
 .card__img {
   width: 100%;
-  height: auto;
+  height: var(--img-h-mobile);
   display: block;
+  object-fit: contain;     /* ne coupe pas l’illustration */
+  object-position: center; /* centrée */
 }
 
+/* Sections */
 .card__sections {
   display: grid;
   gap: 12px;
@@ -222,13 +224,19 @@ body {
   line-height: 1.45;
 }
 
-/* Footer : reste en bas, n'empiète jamais sur la zone cartes */
+/* Footer */
 .footer {
   border-top: 1px solid var(--line);
   padding-top: 12px;
   color: var(--muted);
   font-size: 13px;
   line-height: 1.35;
+}
+
+code {
+  background: rgba(255,255,255,0.06);
+  padding: 2px 6px;
+  border-radius: 8px;
 }
 
 /* Responsive */
@@ -255,9 +263,17 @@ body {
     min-width: 140px;
   }
 
-  /* IMPORTANT : ton JS affiche 1 carte à la fois (viewer), donc rester en 1 colonne
-     évite des comportements bizarres de hauteur sur desktop. */
   .grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* viewer = 1 carte */
+  }
+
+  .card__img {
+    height: var(--img-h-tablet);
+  }
+}
+
+@media (min-width: 1020px) {
+  .card__img {
+    height: var(--img-h-desktop);
   }
 }
