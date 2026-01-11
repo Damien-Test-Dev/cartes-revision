@@ -1,25 +1,25 @@
 /**
- * App de révision (statique) :
- * - Nouveau modèle (recommandé) : data/decks/index.json -> deck.json -> cards[]
- * - Fallback legacy : data/cards/index.json -> person-xxx.json
+ * App de révision (statique) — refonte
+ * Source unique : data/decks/index.json -> deck.json -> cards[]
  *
- * UI:
- * - Deck select
- * - Boutons: Suivant / Aléatoire
- * - Rendu carte: notion (title), définition, exemple, image (fixe par défaut)
+ * Affichage carte (simple) :
+ * - notion
+ * - explication (fallback: definition si l'ancien deck est encore en place)
+ * - exemple
+ * - image fixe (branding) si la carte n'a pas d'image propre (optionnel)
+ *
+ * UI :
+ * - sélection deck
+ * - suivant
+ * - aléatoire
  */
 
 // Base URLs robustes (GitHub Pages friendly)
 const ROOT_DIR = new URL("../../", import.meta.url);
-
 const DECKS_DIR = new URL("data/decks/", ROOT_DIR);
 const DECKS_INDEX_URL = new URL("index.json", DECKS_DIR);
 
-const LEGACY_DIR = new URL("data/cards/", ROOT_DIR);
-const LEGACY_INDEX_URL = new URL("index.json", LEGACY_DIR);
-
 // Image globale par défaut (branding)
-// Affichée sur TOUTES les cartes si la carte n'a pas son propre champ "image".
 const DEFAULT_CARD_IMAGE = {
   src: "assets/images/istqb-fl-fr/001.png",
   alt: "Illustration — révision test logiciel"
@@ -68,29 +68,40 @@ async function fetchJSON(urlObj) {
   return res.json();
 }
 
+/**
+ * Normalize deck to a minimal internal model.
+ * Accepts both:
+ * - new format: { cards: [{ notion, explication, exemple, ...}] }
+ * - old format: { cards: [{ notion, definition, exemple, ...}] } (compat)
+ */
 function normalizeDeck(rawDeck, fallbackId = "deck") {
   const id = safeText(rawDeck?.id) !== "—" ? String(rawDeck.id) : fallbackId;
   const title = safeText(rawDeck?.title) !== "—" ? String(rawDeck.title) : "Deck";
   const description = safeText(rawDeck?.description);
 
   const cardsRaw = Array.isArray(rawDeck?.cards) ? rawDeck.cards : [];
+
   const cards = cardsRaw.map((c, idx) => {
     const cardId = safeText(c?.id) !== "—" ? String(c.id) : String(idx + 1).padStart(3, "0");
 
     const notion = safeText(c?.notion);
-    const definition = safeText(c?.definition ?? c?.explication);
-    const exemple = safeText(c?.exemple ?? c?.example);
 
+    // Nouveau champ cible = explication
+    // Compat: ancien deck peut encore avoir "definition"
+    const explication = safeText(c?.explication ?? c?.definition);
+
+    const exemple = safeText(c?.exemple);
+
+    // image optionnelle au niveau carte
     const imageSrc = c?.image?.src ? String(c.image.src).trim() : "";
     const imageAlt = c?.image?.alt ? String(c.image.alt).trim() : "";
 
     return {
       id: cardId,
       notion,
-      definition,
+      explication,
       exemple,
-      // image optionnelle au niveau carte (peut être null)
-      image: imageSrc ? { src: imageSrc, alt: imageAlt || notion || "Illustration" } : null
+      image: imageSrc ? { src: imageSrc, alt: imageAlt || notion || DEFAULT_CARD_IMAGE.alt } : null
     };
   });
 
@@ -98,14 +109,12 @@ function normalizeDeck(rawDeck, fallbackId = "deck") {
 }
 
 function resolveCardImage(card) {
-  // Si la carte a une image définie, on l'utilise
   if (card?.image?.src) {
     return {
       src: safeText(card.image.src),
       alt: safeText(card.image.alt) !== "—" ? card.image.alt : DEFAULT_CARD_IMAGE.alt
     };
   }
-  // Sinon image globale (branding)
   return DEFAULT_CARD_IMAGE;
 }
 
@@ -114,7 +123,7 @@ function cardHTML(deck, card, positionText) {
   const cardId = escapeHTML(safeText(card?.id));
   const notion = escapeHTML(safeText(card?.notion));
 
-  const definition = escapeHTML(safeText(card?.definition));
+  const explication = escapeHTML(safeText(card?.explication));
   const exemple = escapeHTML(safeText(card?.exemple));
 
   const pos = escapeHTML(safeText(positionText));
@@ -135,8 +144,8 @@ function cardHTML(deck, card, positionText) {
 
       <div class="card__sections">
         <section class="section">
-          <h3 class="section__label">Définition / explication</h3>
-          <p class="section__content">${definition}</p>
+          <h3 class="section__label">Explication</h3>
+          <p class="section__content">${explication}</p>
         </section>
 
         <section class="section">
@@ -153,6 +162,7 @@ function renderSingleCard(deck, cardIndex) {
   if (!container) return;
 
   const total = deck.cards.length;
+
   if (total === 0) {
     container.innerHTML = `
       <article class="card">
@@ -197,12 +207,12 @@ function saveIndex(deckId, index) {
   }
 }
 
-async function loadNewModelDecks() {
+async function loadDeckCatalog() {
   const decksIndex = await fetchJSON(DECKS_INDEX_URL);
   const decks = Array.isArray(decksIndex?.decks) ? decksIndex.decks : [];
 
   if (decks.length === 0) {
-    throw new Error('Deck index présent mais vide (champ "decks").');
+    throw new Error('Deck catalog vide (champ "decks").');
   }
 
   return decks
@@ -218,44 +228,6 @@ async function loadDeckFile(deckMeta) {
   const deckUrl = new URL(deckMeta.file, DECKS_DIR);
   const rawDeck = await fetchJSON(deckUrl);
   return normalizeDeck(rawDeck, deckMeta.id);
-}
-
-async function loadLegacyAsDeck() {
-  const legacyIndex = await fetchJSON(LEGACY_INDEX_URL);
-  const entries = Array.isArray(legacyIndex?.cards) ? legacyIndex.cards : [];
-
-  const cards = [];
-
-  for (const entry of entries) {
-    const id = entry?.id ?? "—";
-    const file = entry?.file;
-    if (!file) continue;
-
-    const dataUrl = new URL(file, LEGACY_DIR);
-    const data = await fetchJSON(dataUrl);
-
-    const nom = safeText(data?.nom);
-    const prenom = safeText(data?.prenom);
-    const age = safeText(data?.age);
-
-    cards.push({
-      id: String(id),
-      notion: `${prenom} ${nom}`.trim() || "Identité",
-      definition: `Nom: ${nom} • Prénom: ${prenom} • Âge: ${age}`,
-      exemple: "Exemple : cette carte vient de l'ancien format (fallback).",
-      image: null
-    });
-  }
-
-  return normalizeDeck(
-    {
-      id: "legacy",
-      title: "Deck (legacy)",
-      description: "Deck généré depuis data/cards (ancien format).",
-      cards
-    },
-    "legacy"
-  );
 }
 
 function fillDeckSelect(options, selectedId) {
@@ -280,23 +252,16 @@ document.addEventListener("DOMContentLoaded", async () => {
   const btnNext = $("btn-next");
   const btnRandom = $("btn-random");
 
-  let mode = "new";
   let decksMeta = [];
   let currentDeck = null;
   let currentIndex = 0;
 
   async function loadDeckById(deckId) {
-    if (mode === "legacy") {
-      currentDeck = await loadLegacyAsDeck();
-      currentIndex = 0;
-      renderSingleCard(currentDeck, currentIndex);
-      return;
-    }
-
     const meta = decksMeta.find((d) => d.id === deckId) || decksMeta[0];
-    currentDeck = await loadDeckFile(meta);
 
+    currentDeck = await loadDeckFile(meta);
     currentIndex = Math.max(0, Math.min(loadSavedIndex(currentDeck.id), currentDeck.cards.length - 1));
+
     renderSingleCard(currentDeck, currentIndex);
   }
 
@@ -305,6 +270,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const id = e.target.value;
       setControlsEnabled(false);
       setStatus("Changement de deck…");
+
       try {
         await loadDeckById(id);
       } catch (err) {
@@ -328,10 +294,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!currentDeck || currentDeck.cards.length === 0) return;
 
       const n = currentDeck.cards.length;
-      if (n === 1) {
-        renderSingleCard(currentDeck, 0);
-        return;
-      }
+      if (n === 1) return renderSingleCard(currentDeck, 0);
 
       let next = currentIndex;
       while (next === currentIndex) next = Math.floor(Math.random() * n);
@@ -343,33 +306,23 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   try {
-    decksMeta = await loadNewModelDecks();
-    mode = "new";
+    decksMeta = await loadDeckCatalog();
 
     const selectedId = decksMeta[0].id;
     fillDeckSelect(decksMeta, selectedId);
 
     await loadDeckById(selectedId);
-  } catch (errNew) {
-    console.warn("New model decks not available, fallback to legacy:", errNew);
-
-    try {
-      mode = "legacy";
-      fillDeckSelect([{ id: "legacy", title: "Deck (legacy)" }], "legacy");
-      await loadDeckById("legacy");
-    } catch (errLegacy) {
-      console.error(errLegacy);
-      $("cards").innerHTML = `
-        <article class="card">
-          <h2 class="card__title">Impossible de charger les données</h2>
-          <p class="card__text">
-            Aucun deck trouvé (data/decks) et fallback legacy indisponible (data/cards).
-            Vérifie les chemins et les fichiers JSON.
-          </p>
-        </article>
-      `;
-      setStatus(`Erreur: ${errLegacy.message}`, true);
-      setControlsEnabled(false);
-    }
+  } catch (err) {
+    console.error(err);
+    $("cards").innerHTML = `
+      <article class="card">
+        <h2 class="card__title">Impossible de charger les decks</h2>
+        <p class="card__text">
+          Vérifie <code>data/decks/index.json</code> et le fichier deck référencé.
+        </p>
+      </article>
+    `;
+    setStatus(`Erreur: ${err.message}`, true);
+    setControlsEnabled(false);
   }
 });
