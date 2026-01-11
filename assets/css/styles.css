@@ -14,7 +14,6 @@
   --space-3: 16px;
   --space-4: 22px;
 
-  /* Taille cible de l’image de carte (UX révision) */
   --img-h-mobile: 180px;
   --img-h-tablet: 220px;
   --img-h-desktop: 260px;
@@ -22,38 +21,28 @@
 
 * { box-sizing: border-box; }
 
-html, body {
-  height: 100%;
-}
+html, body { height: 100%; }
 
 body {
   margin: 0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-
   background:
     radial-gradient(1200px 600px at 20% 0%, rgba(110,168,254,0.25), transparent 60%),
     var(--bg);
-
   color: var(--text);
-
-  /* Mode "app" : scroll géré dans la zone centrale */
   overflow: hidden;
 }
 
-/* PAGE = header / zone cartes (flex) / footer */
 .page {
   max-width: 1040px;
   margin: 0 auto;
-
   height: 100vh;
   display: flex;
   flex-direction: column;
-
   padding: 28px 16px 18px;
   gap: var(--space-3);
 }
 
-/* Header */
 .header h1 {
   margin: 0 0 6px;
   font-size: 28px;
@@ -66,7 +55,6 @@ body {
   line-height: 1.35;
 }
 
-/* Toolbar */
 .toolbar {
   display: grid;
   grid-template-columns: 1fr;
@@ -78,10 +66,7 @@ body {
   margin: 0 0 var(--space-2);
 }
 
-.toolbar__group {
-  display: grid;
-  gap: 6px;
-}
+.toolbar__group { display: grid; gap: 6px; }
 
 .toolbar__group--right {
   display: grid;
@@ -118,15 +103,12 @@ body {
   transition: transform 0.06s ease, border-color 0.12s ease;
 }
 
-.toolbar__button:active {
-  transform: translateY(1px);
-}
+.toolbar__button:active { transform: translateY(1px); }
 
 .toolbar__button--primary {
   border-color: rgba(110,168,254,0.55);
 }
 
-/* Status */
 .status {
   margin: 0;
   font-size: 13px;
@@ -142,18 +124,29 @@ body {
   border-color: rgba(255,180,180,0.35);
 }
 
-/* ZONE CARTES */
+/* ✅ Audit visible */
+.audit {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+  padding: 10px 12px;
+  border: 1px dashed rgba(255,255,255,0.16);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.02);
+}
+
+.audit strong { color: var(--text); }
+
 .grid {
   flex: 1;
-  min-height: 0;   /* critique pour overflow en flex */
-  overflow: auto;  /* scroll interne */
+  min-height: 0;
+  overflow: auto;
   padding-bottom: 2px;
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--space-3);
 }
 
-/* Card */
 .card {
   background:
     linear-gradient(180deg, rgba(255,255,255,0.04), transparent),
@@ -182,7 +175,6 @@ body {
   line-height: 1.2;
 }
 
-/* Media */
 .card__media {
   margin: 12px 0 14px;
   border-radius: 14px;
@@ -191,16 +183,14 @@ body {
   background: rgba(255,255,255,0.02);
 }
 
-/* ✅ FIX: image cadrée (ne prend plus tout l’écran) */
 .card__img {
   width: 100%;
   height: var(--img-h-mobile);
   display: block;
-  object-fit: contain;     /* ne coupe pas l’illustration */
-  object-position: center; /* centrée */
+  object-fit: contain;
+  object-position: center;
 }
 
-/* Sections */
 .card__sections {
   display: grid;
   gap: 12px;
@@ -224,7 +214,6 @@ body {
   line-height: 1.45;
 }
 
-/* Footer */
 .footer {
   border-top: 1px solid var(--line);
   padding-top: 12px;
@@ -239,15 +228,10 @@ code {
   border-radius: 8px;
 }
 
-/* Responsive */
 @media (min-width: 720px) {
-  .page {
-    padding: 34px 18px 18px;
-  }
+  .page { padding: 34px 18px 18px; }
 
-  .header h1 {
-    font-size: 32px;
-  }
+  .header h1 { font-size: 32px; }
 
   .toolbar {
     grid-template-columns: 1.2fr 1fr;
@@ -259,21 +243,11 @@ code {
     justify-content: end;
   }
 
-  .toolbar__button {
-    min-width: 140px;
-  }
+  .toolbar__button { min-width: 140px; }
 
-  .grid {
-    grid-template-columns: 1fr; /* viewer = 1 carte */
-  }
-
-  .card__img {
-    height: var(--img-h-tablet);
-  }
+  .card__img { height: var(--img-h-tablet); }
 }
 
 @media (min-width: 1020px) {
-  .card__img {
-    height: var(--img-h-desktop);
-  }
+  .card__img { height: var(--img-h-desktop); }
 }
