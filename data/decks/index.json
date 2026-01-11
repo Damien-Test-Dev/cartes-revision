@@ -2,9 +2,14 @@
   "version": 1,
   "decks": [
     {
-      "id": "istqb-fl-fr",
-      "title": "ISTQB Foundation (FR)",
+      "id": "istqb-fl-fr-ch1",
+      "title": "ISTQB FL (FR) — Chapitre 1",
       "file": "istqb-fl-fr.json"
+    },
+    {
+      "id": "istqb-fl-fr-ch2",
+      "title": "ISTQB FL (FR) — Chapitre 2",
+      "file": "istqb-fl-fr-ch2.json"
     }
   ]
 }
