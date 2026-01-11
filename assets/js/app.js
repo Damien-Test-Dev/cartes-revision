@@ -1,23 +1,28 @@
 /**
- * App de révision (statique) — refonte + coverage visible
- * Source : data/decks/index.json -> deck.json -> cards[]
+ * App de révision (statique) — compatible iOS 12 (iPad Air 1)
  *
- * Coverage:
+ * Source :
+ * - data/decks/index.json -> deck.json -> cards[]
+ *
+ * Coverage :
  * - charge data/decks/<deckId>.ref.json
  * - expected[] = clés attendues (LO ISTQB)
  * - match sur card.lo si expected commence par "FL-"
  *
- * Compat tablette (Safari) :
- * - évite String.prototype.replaceAll (pas supporté partout)
+ * Compat iOS 12 :
+ * - pas de optional chaining (?.)
+ * - pas de nullish coalescing (??)
+ * - pas de replaceAll
+ * - pas de import.meta.url (chemins via document.baseURI)
  */
 
-// Base URLs robustes (GitHub Pages friendly)
-const ROOT_DIR = new URL("../../", import.meta.url);
-const DECKS_DIR = new URL("data/decks/", ROOT_DIR);
-const DECKS_INDEX_URL = new URL("index.json", DECKS_DIR);
+// Base URLs robustes (GitHub Pages friendly, iOS12 safe)
+var ROOT_DIR = new URL("./", document.baseURI);
+var DECKS_DIR = new URL("data/decks/", ROOT_DIR);
+var DECKS_INDEX_URL = new URL("index.json", DECKS_DIR);
 
 // Image globale par défaut (branding)
-const DEFAULT_CARD_IMAGE = {
+var DEFAULT_CARD_IMAGE = {
   src: "assets/images/istqb-fl-fr/001.png",
   alt: "Illustration — révision test logiciel"
 };
@@ -26,16 +31,17 @@ function $(id) {
   return document.getElementById(id);
 }
 
-function setStatus(message, isError = false) {
-  const el = $("status");
+function setStatus(message, isError) {
+  var el = $("status");
   if (!el) return;
   el.textContent = message;
   el.dataset.state = isError ? "error" : "ok";
 }
 
 function setAudit(message, visible) {
-  const el = $("audit");
+  var el = $("audit");
   if (!el) return;
+
   if (!visible) {
     el.hidden = true;
     el.textContent = "";
@@ -46,9 +52,9 @@ function setAudit(message, visible) {
 }
 
 function setControlsEnabled(enabled) {
-  const deckSelect = $("deck-select");
-  const btnNext = $("btn-next");
-  const btnRandom = $("btn-random");
+  var deckSelect = $("deck-select");
+  var btnNext = $("btn-next");
+  var btnRandom = $("btn-random");
 
   if (deckSelect) deckSelect.disabled = !enabled;
   if (btnNext) btnNext.disabled = !enabled;
@@ -57,17 +63,13 @@ function setControlsEnabled(enabled) {
 
 function safeText(value) {
   if (value === null || value === undefined) return "—";
-  const s = String(value).trim();
+  var s = String(value).trim();
   return s.length ? s : "—";
 }
 
-/**
- * ✅ escapeHTML compatible iPad/Safari :
- * - pas de replaceAll
- * - remplacement via regex globales
- */
+// ✅ escapeHTML compatible iOS 12 (pas de replaceAll)
 function escapeHTML(str) {
-  const s = String(str);
+  var s = String(str);
   return s
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -76,107 +78,122 @@ function escapeHTML(str) {
     .replace(/'/g, "&#039;");
 }
 
-async function fetchJSON(urlObj) {
-  const res = await fetch(urlObj.toString(), { cache: "no-store" });
-  if (!res.ok) throw new Error(`Fetch failed: HTTP ${res.status} on ${res.url}`);
-  return res.json();
+function fetchJSON(urlObj) {
+  return fetch(urlObj.toString(), { cache: "no-store" }).then(function (res) {
+    if (!res.ok) {
+      throw new Error("Fetch failed: HTTP " + res.status + " on " + res.url);
+    }
+    return res.json();
+  });
 }
 
-function normalizeDeck(rawDeck, fallbackId = "deck") {
-  const id = safeText(rawDeck?.id) !== "—" ? String(rawDeck.id) : fallbackId;
-  const title = safeText(rawDeck?.title) !== "—" ? String(rawDeck.title) : "Deck";
-  const description = safeText(rawDeck?.description);
+function normalizeDeck(rawDeck, fallbackId) {
+  if (!fallbackId) fallbackId = "deck";
 
-  const cardsRaw = Array.isArray(rawDeck?.cards) ? rawDeck.cards : [];
+  var id = safeText(rawDeck && rawDeck.id) !== "—" ? String(rawDeck.id) : fallbackId;
+  var title = safeText(rawDeck && rawDeck.title) !== "—" ? String(rawDeck.title) : "Deck";
+  var description = safeText(rawDeck && rawDeck.description);
 
-  const cards = cardsRaw.map((c, idx) => {
-    const cardId = safeText(c?.id) !== "—" ? String(c.id) : String(idx + 1).padStart(3, "0");
+  var cardsRaw = (rawDeck && Array.isArray(rawDeck.cards)) ? rawDeck.cards : [];
 
-    const notion = safeText(c?.notion);
-    const explication = safeText(c?.explication ?? c?.definition);
-    const exemple = safeText(c?.exemple);
+  var cards = cardsRaw.map(function (c, idx) {
+    var cardId = safeText(c && c.id) !== "—" ? String(c.id) : String(idx + 1).padStart(3, "0");
 
-    const lo = safeText(c?.lo);
-    const loOrNull = lo !== "—" ? lo : null;
+    var notion = safeText(c && c.notion);
 
-    const imageSrc = c?.image?.src ? String(c.image.src).trim() : "";
-    const imageAlt = c?.image?.alt ? String(c.image.alt).trim() : "";
+    // explication (nouveau) sinon definition (ancien)
+    var explicationValue = (c && c.explication !== undefined && c.explication !== null)
+      ? c.explication
+      : (c && c.definition !== undefined && c.definition !== null ? c.definition : undefined);
+    var explication = safeText(explicationValue);
+
+    var exemple = safeText(c && c.exemple);
+
+    var lo = safeText(c && c.lo);
+    var loOrNull = lo !== "—" ? lo : null;
+
+    // image optionnelle au niveau carte
+    var imageSrc = "";
+    var imageAlt = "";
+    if (c && c.image && c.image.src) imageSrc = String(c.image.src).trim();
+    if (c && c.image && c.image.alt) imageAlt = String(c.image.alt).trim();
 
     return {
       id: cardId,
       lo: loOrNull,
-      notion,
-      explication,
-      exemple,
+      notion: notion,
+      explication: explication,
+      exemple: exemple,
       image: imageSrc ? { src: imageSrc, alt: imageAlt || notion || DEFAULT_CARD_IMAGE.alt } : null
     };
   });
 
-  return { id, title, description, cards };
+  return { id: id, title: title, description: description, cards: cards };
 }
 
 function resolveCardImage(card) {
-  if (card?.image?.src) {
+  if (card && card.image && card.image.src) {
     return {
       src: safeText(card.image.src),
-      alt: safeText(card.image.alt) !== "—" ? card.image.alt : DEFAULT_CARD_IMAGE.alt
+      alt: (safeText(card.image.alt) !== "—") ? card.image.alt : DEFAULT_CARD_IMAGE.alt
     };
   }
   return DEFAULT_CARD_IMAGE;
 }
 
 function normalizeRef(rawRef) {
-  const expected = Array.isArray(rawRef?.expected) ? rawRef.expected.map(String) : [];
-  const expectedClean = expected.map((x) => x.trim()).filter(Boolean);
-  const matchMode = expectedClean.some((x) => x.indexOf("FL-") === 0) ? "lo" : "id";
+  var expected = (rawRef && Array.isArray(rawRef.expected)) ? rawRef.expected.map(String) : [];
+  var expectedClean = expected.map(function (x) { return String(x).trim(); }).filter(Boolean);
+
+  var matchMode = expectedClean.some(function (x) { return x.indexOf("FL-") === 0; }) ? "lo" : "id";
 
   return {
-    id: safeText(rawRef?.id),
-    chapterNumber: rawRef?.chapterNumber ?? null,
-    chapterName: safeText(rawRef?.chapterName),
+    id: safeText(rawRef && rawRef.id),
+    chapterNumber: rawRef ? rawRef.chapterNumber : null,
+    chapterName: safeText(rawRef && rawRef.chapterName),
     expected: expectedClean,
     expectedSet: new Set(expectedClean),
-    matchMode
+    matchMode: matchMode
   };
 }
 
 function computeCoverage(deck, ref) {
-  if (!ref || ref.expected.length === 0) {
+  if (!ref || !ref.expected || ref.expected.length === 0) {
     return {
       hasRef: false,
       matchMode: null,
       expectedTotal: 0,
       coveredCount: 0,
       missing: [],
-      cardIsReferenced: () => false
+      cardIsReferenced: function () { return false; }
     };
   }
 
-  const expectedSet = ref.expectedSet;
+  var expectedSet = ref.expectedSet;
 
-  const cardKey = (card) => {
-    if (ref.matchMode === "lo") return card?.lo || "";
-    return card?.id || "";
-  };
+  function cardKey(card) {
+    if (ref.matchMode === "lo") return (card && card.lo) ? card.lo : "";
+    return (card && card.id) ? card.id : "";
+  }
 
-  const presentKeys = new Set(
+  var presentKeys = new Set(
     (deck.cards || [])
-      .map(cardKey)
-      .map((x) => String(x).trim())
+      .map(function (c) { return cardKey(c); })
+      .map(function (x) { return String(x).trim(); })
       .filter(Boolean)
   );
 
-  const missing = ref.expected.filter((k) => !presentKeys.has(k));
-  const coveredCount = ref.expected.length - missing.length;
+  var missing = ref.expected.filter(function (k) { return !presentKeys.has(k); });
+  var coveredCount = ref.expected.length - missing.length;
 
   return {
     hasRef: true,
     matchMode: ref.matchMode,
     expectedTotal: ref.expected.length,
-    coveredCount,
-    missing,
-    cardIsReferenced: (card) => {
-      const k = String(cardKey(card) || "").trim();
+    coveredCount: coveredCount,
+    missing: missing,
+    cardIsReferenced: function (card) {
+      var k = String(cardKey(card) || "").trim();
       return k ? expectedSet.has(k) : false;
     }
   };
@@ -188,92 +205,90 @@ function coverageBadgeText(coverage, card) {
 }
 
 function cardHTML(deck, card, positionText, coverage) {
-  const deckTitle = escapeHTML(safeText(deck?.title));
-  const cardId = escapeHTML(safeText(card?.id));
-  const notion = escapeHTML(safeText(card?.notion));
+  var deckTitle = escapeHTML(safeText(deck && deck.title));
+  var cardId = escapeHTML(safeText(card && card.id));
+  var notion = escapeHTML(safeText(card && card.notion));
 
-  const explication = escapeHTML(safeText(card?.explication));
-  const exemple = escapeHTML(safeText(card?.exemple));
+  var explication = escapeHTML(safeText(card && card.explication));
+  var exemple = escapeHTML(safeText(card && card.exemple));
 
-  const pos = escapeHTML(safeText(positionText));
-  const badge = escapeHTML(coverageBadgeText(coverage, card));
+  var pos = escapeHTML(safeText(positionText));
+  var badge = escapeHTML(coverageBadgeText(coverage, card));
 
-  const img = resolveCardImage(card);
-  const imgSrc = escapeHTML(img.src);
-  const imgAlt = escapeHTML(img.alt);
+  var img = resolveCardImage(card);
+  var imgSrc = escapeHTML(img.src);
+  var imgAlt = escapeHTML(img.alt);
 
-  const loPart =
-    coverage.hasRef && coverage.matchMode === "lo" && card?.lo
-      ? ` • LO ${escapeHTML(card.lo)}`
-      : "";
+  var loPart = "";
+  if (coverage.hasRef && coverage.matchMode === "lo" && card && card.lo) {
+    loPart = " • LO " + escapeHTML(card.lo);
+  }
 
-  return `
-    <article class="card">
-      <div class="card__badge">${deckTitle} • ID ${cardId} • ${pos} • ${badge}${loPart}</div>
-
-      <h2 class="card__title">${notion}</h2>
-
-      <div class="card__media">
-        <img class="card__img" src="${imgSrc}" alt="${imgAlt}" loading="lazy" />
-      </div>
-
-      <div class="card__sections">
-        <section class="section">
-          <h3 class="section__label">Explication</h3>
-          <p class="section__content">${explication}</p>
-        </section>
-
-        <section class="section">
-          <h3 class="section__label">Exemple</h3>
-          <p class="section__content">${exemple}</p>
-        </section>
-      </div>
-    </article>
-  `;
+  return (
+    '<article class="card">' +
+      '<div class="card__badge">' + deckTitle + ' • ID ' + cardId + ' • ' + pos + ' • ' + badge + loPart + '</div>' +
+      '<h2 class="card__title">' + notion + '</h2>' +
+      '<div class="card__media">' +
+        '<img class="card__img" src="' + imgSrc + '" alt="' + imgAlt + '" loading="lazy" />' +
+      '</div>' +
+      '<div class="card__sections">' +
+        '<section class="section">' +
+          '<h3 class="section__label">Explication</h3>' +
+          '<p class="section__content">' + explication + '</p>' +
+        '</section>' +
+        '<section class="section">' +
+          '<h3 class="section__label">Exemple</h3>' +
+          '<p class="section__content">' + exemple + '</p>' +
+        '</section>' +
+      '</div>' +
+    '</article>'
+  );
 }
 
 function renderSingleCard(deck, cardIndex, coverage) {
-  const container = $("cards");
+  var container = $("cards");
   if (!container) return;
 
-  const total = deck.cards.length;
+  var total = deck.cards.length;
 
   if (total === 0) {
-    container.innerHTML = `
-      <article class="card">
-        <h2 class="card__title">Aucune carte</h2>
-        <p class="card__text">Ce deck ne contient aucune carte pour le moment.</p>
-      </article>
-    `;
+    container.innerHTML =
+      '<article class="card">' +
+        '<h2 class="card__title">Aucune carte</h2>' +
+        '<p class="card__text">Ce deck ne contient aucune carte pour le moment.</p>' +
+      '</article>';
     setStatus("Deck chargé, mais vide.", true);
     setAudit("", false);
     setControlsEnabled(false);
     return;
   }
 
-  const i = Math.max(0, Math.min(cardIndex, total - 1));
-  const card = deck.cards[i];
+  var i = Math.max(0, Math.min(cardIndex, total - 1));
+  var card = deck.cards[i];
 
-  const posText = `${i + 1}/${total}`;
+  var posText = (i + 1) + "/" + total;
   container.innerHTML = cardHTML(deck, card, posText, coverage);
 
   if (!coverage.hasRef) {
-    setStatus(`Deck: ${deck.title} — carte ${posText} • Couverture: (ref absente)`, true);
+    setStatus("Deck: " + deck.title + " — carte " + posText + " • Couverture: (ref absente)", true);
     setAudit("Référence absente : ajoute le fichier <deckId>.ref.json pour activer le contrôle.", true);
   } else {
-    const missingCount = coverage.missing.length;
-    const coverageText = `Couverture: ${coverage.coveredCount}/${coverage.expectedTotal}`;
-    const hint =
-      coverage.matchMode === "lo" && coverage.coveredCount === 0
-        ? " — Ajoute le champ 'lo' aux cartes pour activer le matching."
-        : missingCount > 0
-          ? ` — Manquants: ${missingCount}`
-          : " ✅";
+    var missingCount = coverage.missing.length;
+    var coverageText = "Couverture: " + coverage.coveredCount + "/" + coverage.expectedTotal;
 
-    setStatus(`Deck: ${deck.title} — carte ${posText} • ${coverageText}${hint}`, missingCount > 0);
+    var hint = "";
+    if (coverage.matchMode === "lo" && coverage.coveredCount === 0) {
+      hint = " — Ajoute le champ 'lo' aux cartes pour activer le matching.";
+    } else if (missingCount > 0) {
+      hint = " — Manquants: " + missingCount;
+    } else {
+      hint = " ✅";
+    }
+
+    setStatus("Deck: " + deck.title + " — carte " + posText + " • " + coverageText + hint, missingCount > 0);
 
     if (missingCount > 0) {
-      setAudit(`Manquants (${missingCount}) : ${coverage.missing.join(", ")}`, true);
+      setAudit("Manquants (" + missingCount + ") : " + coverage.missing.join(", "), true);
     } else {
       setAudit("Deck complet ✅ (tous les objectifs attendus sont couverts)", true);
     }
@@ -283,15 +298,15 @@ function renderSingleCard(deck, cardIndex, coverage) {
 }
 
 function storageKey(deckId) {
-  return `revisionapp:deck:${deckId}:index`;
+  return "revisionapp:deck:" + deckId + ":index";
 }
 
 function loadSavedIndex(deckId) {
   try {
-    const raw = localStorage.getItem(storageKey(deckId));
-    const n = Number(raw);
+    var raw = localStorage.getItem(storageKey(deckId));
+    var n = Number(raw);
     return Number.isFinite(n) ? n : 0;
-  } catch {
+  } catch (e) {
     return 0;
   }
 }
@@ -299,110 +314,112 @@ function loadSavedIndex(deckId) {
 function saveIndex(deckId, index) {
   try {
     localStorage.setItem(storageKey(deckId), String(index));
-  } catch {
+  } catch (e) {
     // ignore
   }
 }
 
-async function loadDeckCatalog() {
-  const decksIndex = await fetchJSON(DECKS_INDEX_URL);
-  const decks = Array.isArray(decksIndex?.decks) ? decksIndex.decks : [];
+function loadDeckCatalog() {
+  return fetchJSON(DECKS_INDEX_URL).then(function (decksIndex) {
+    var decks = (decksIndex && Array.isArray(decksIndex.decks)) ? decksIndex.decks : [];
+    if (decks.length === 0) throw new Error('Deck catalog vide (champ "decks").');
 
-  if (decks.length === 0) throw new Error('Deck catalog vide (champ "decks").');
-
-  return decks
-    .map((d) => ({
-      id: String(d.id || "").trim(),
-      title: String(d.title || "").trim(),
-      file: String(d.file || "").trim()
-    }))
-    .filter((d) => d.id && d.file);
+    return decks
+      .map(function (d) {
+        return {
+          id: String(d.id || "").trim(),
+          title: String(d.title || "").trim(),
+          file: String(d.file || "").trim()
+        };
+      })
+      .filter(function (d) { return d.id && d.file; });
+  });
 }
 
-async function loadDeckFile(deckMeta) {
-  const deckUrl = new URL(deckMeta.file, DECKS_DIR);
-  const rawDeck = await fetchJSON(deckUrl);
-  return normalizeDeck(rawDeck, deckMeta.id);
+function loadDeckFile(deckMeta) {
+  var deckUrl = new URL(deckMeta.file, DECKS_DIR);
+  return fetchJSON(deckUrl).then(function (rawDeck) {
+    return normalizeDeck(rawDeck, deckMeta.id);
+  });
 }
 
-async function tryLoadDeckRef(deckId) {
-  const refUrl = new URL(`${deckId}.ref.json`, DECKS_DIR);
-  try {
-    const rawRef = await fetchJSON(refUrl);
-    return normalizeRef(rawRef);
-  } catch (err) {
-    console.warn(`Ref file not found for deck "${deckId}" (${refUrl}):`, err);
-    return null;
-  }
+function tryLoadDeckRef(deckId) {
+  var refUrl = new URL(deckId + ".ref.json", DECKS_DIR);
+  return fetchJSON(refUrl)
+    .then(function (rawRef) { return normalizeRef(rawRef); })
+    .catch(function () { return null; });
 }
 
 function fillDeckSelect(options, selectedId) {
-  const select = $("deck-select");
+  var select = $("deck-select");
   if (!select) return;
 
   select.innerHTML = options
-    .map((d) => {
-      const id = escapeHTML(d.id);
-      const title = escapeHTML(d.title || d.id);
-      const selected = d.id === selectedId ? "selected" : "";
-      return `<option value="${id}" ${selected}>${title}</option>`;
+    .map(function (d) {
+      var id = escapeHTML(d.id);
+      var title = escapeHTML(d.title || d.id);
+      var selected = (d.id === selectedId) ? "selected" : "";
+      return '<option value="' + id + '" ' + selected + '>' + title + "</option>";
     })
     .join("");
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", function () {
   setControlsEnabled(false);
-  setStatus("Chargement…");
+  setStatus("Chargement…", false);
   setAudit("", false);
 
-  const deckSelect = $("deck-select");
-  const btnNext = $("btn-next");
-  const btnRandom = $("btn-random");
+  var deckSelect = $("deck-select");
+  var btnNext = $("btn-next");
+  var btnRandom = $("btn-random");
 
-  let decksMeta = [];
-  let currentDeck = null;
-  let currentIndex = 0;
+  var decksMeta = [];
+  var currentDeck = null;
+  var currentIndex = 0;
 
-  let currentCoverage = {
+  var currentCoverage = {
     hasRef: false,
     matchMode: null,
     expectedTotal: 0,
     coveredCount: 0,
     missing: [],
-    cardIsReferenced: () => false
+    cardIsReferenced: function () { return false; }
   };
 
-  async function loadDeckById(deckId) {
-    const meta = decksMeta.find((d) => d.id === deckId) || decksMeta[0];
+  function loadDeckById(deckId) {
+    var meta =
+      decksMeta.find(function (d) { return d.id === deckId; }) ||
+      decksMeta[0];
 
-    currentDeck = await loadDeckFile(meta);
-
-    const ref = await tryLoadDeckRef(currentDeck.id);
-    currentCoverage = computeCoverage(currentDeck, ref);
-
-    currentIndex = Math.max(0, Math.min(loadSavedIndex(currentDeck.id), currentDeck.cards.length - 1));
-    renderSingleCard(currentDeck, currentIndex, currentCoverage);
+    return loadDeckFile(meta)
+      .then(function (deck) {
+        currentDeck = deck;
+        return tryLoadDeckRef(currentDeck.id);
+      })
+      .then(function (ref) {
+        currentCoverage = computeCoverage(currentDeck, ref);
+        currentIndex = Math.max(0, Math.min(loadSavedIndex(currentDeck.id), currentDeck.cards.length - 1));
+        renderSingleCard(currentDeck, currentIndex, currentCoverage);
+      });
   }
 
   if (deckSelect) {
-    deckSelect.addEventListener("change", async (e) => {
-      const id = e.target.value;
+    deckSelect.addEventListener("change", function (e) {
+      var id = e.target.value;
       setControlsEnabled(false);
-      setStatus("Changement de deck…");
+      setStatus("Changement de deck…", false);
       setAudit("", false);
 
-      try {
-        await loadDeckById(id);
-      } catch (err) {
+      loadDeckById(id).catch(function (err) {
         console.error(err);
-        setStatus(`Erreur: ${err.message}`, true);
+        setStatus("Erreur: " + err.message, true);
         setAudit("Erreur de chargement : vérifie le catalogue et les fichiers JSON.", true);
-      }
+      });
     });
   }
 
   if (btnNext) {
-    btnNext.addEventListener("click", () => {
+    btnNext.addEventListener("click", function () {
       if (!currentDeck || currentDeck.cards.length === 0) return;
       currentIndex = (currentIndex + 1) % currentDeck.cards.length;
       saveIndex(currentDeck.id, currentIndex);
@@ -411,13 +428,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   if (btnRandom) {
-    btnRandom.addEventListener("click", () => {
+    btnRandom.addEventListener("click", function () {
       if (!currentDeck || currentDeck.cards.length === 0) return;
 
-      const n = currentDeck.cards.length;
+      var n = currentDeck.cards.length;
       if (n === 1) return renderSingleCard(currentDeck, 0, currentCoverage);
 
-      let next = currentIndex;
+      var next = currentIndex;
       while (next === currentIndex) next = Math.floor(Math.random() * n);
 
       currentIndex = next;
@@ -426,24 +443,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  try {
-    decksMeta = await loadDeckCatalog();
-    const selectedId = decksMeta[0].id;
+  loadDeckCatalog()
+    .then(function (meta) {
+      decksMeta = meta;
 
-    fillDeckSelect(decksMeta, selectedId);
-    await loadDeckById(selectedId);
-  } catch (err) {
-    console.error(err);
-    $("cards").innerHTML = `
-      <article class="card">
-        <h2 class="card__title">Impossible de charger les decks</h2>
-        <p class="card__text">
-          Vérifie <code>data/decks/index.json</code> et les fichiers deck référencés.
-        </p>
-      </article>
-    `;
-    setStatus(`Erreur: ${err.message}`, true);
-    setAudit("Aucun deck chargé : vérifie les chemins et le JSON.", true);
-    setControlsEnabled(false);
-  }
+      var selectedId = decksMeta[0].id;
+      fillDeckSelect(decksMeta, selectedId);
+
+      return loadDeckById(selectedId);
+    })
+    .catch(function (err) {
+      console.error(err);
+      var cards = $("cards");
+      if (cards) {
+        cards.innerHTML =
+          '<article class="card">' +
+            '<h2 class="card__title">Impossible de charger les decks</h2>' +
+            '<p class="card__text">Vérifie <code>data/decks/index.json</code> et les fichiers deck référencés.</p>' +
+          "</article>";
+      }
+      setStatus("Erreur: " + err.message, true);
+      setAudit("Aucun deck chargé : vérifie les chemins et le JSON.", true);
+      setControlsEnabled(false);
+    });
 });
