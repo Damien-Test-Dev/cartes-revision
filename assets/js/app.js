@@ -6,7 +6,7 @@
  * UI:
  * - Deck select
  * - Boutons: Suivant / Aléatoire
- * - Rendu carte: notion (title), définition, exemple, image optionnelle
+ * - Rendu carte: notion (title), définition, exemple, image (fixe par défaut)
  */
 
 // Base URLs robustes (GitHub Pages friendly)
@@ -17,6 +17,13 @@ const DECKS_INDEX_URL = new URL("index.json", DECKS_DIR);
 
 const LEGACY_DIR = new URL("data/cards/", ROOT_DIR);
 const LEGACY_INDEX_URL = new URL("index.json", LEGACY_DIR);
+
+// Image globale par défaut (branding)
+// Affichée sur TOUTES les cartes si la carte n'a pas son propre champ "image".
+const DEFAULT_CARD_IMAGE = {
+  src: "assets/images/istqb-fl-fr/001.png",
+  alt: "Illustration — révision test logiciel"
+};
 
 function $(id) {
   return document.getElementById(id);
@@ -71,8 +78,8 @@ function normalizeDeck(rawDeck, fallbackId = "deck") {
     const cardId = safeText(c?.id) !== "—" ? String(c.id) : String(idx + 1).padStart(3, "0");
 
     const notion = safeText(c?.notion);
-    const definition = safeText(c?.definition ?? c?.explication); // tolérance
-    const exemple = safeText(c?.exemple ?? c?.example); // tolérance
+    const definition = safeText(c?.definition ?? c?.explication);
+    const exemple = safeText(c?.exemple ?? c?.example);
 
     const imageSrc = c?.image?.src ? String(c.image.src).trim() : "";
     const imageAlt = c?.image?.alt ? String(c.image.alt).trim() : "";
@@ -82,11 +89,24 @@ function normalizeDeck(rawDeck, fallbackId = "deck") {
       notion,
       definition,
       exemple,
+      // image optionnelle au niveau carte (peut être null)
       image: imageSrc ? { src: imageSrc, alt: imageAlt || notion || "Illustration" } : null
     };
   });
 
   return { id, title, description, cards };
+}
+
+function resolveCardImage(card) {
+  // Si la carte a une image définie, on l'utilise
+  if (card?.image?.src) {
+    return {
+      src: safeText(card.image.src),
+      alt: safeText(card.image.alt) !== "—" ? card.image.alt : DEFAULT_CARD_IMAGE.alt
+    };
+  }
+  // Sinon image globale (branding)
+  return DEFAULT_CARD_IMAGE;
 }
 
 function cardHTML(deck, card, positionText) {
@@ -99,9 +119,9 @@ function cardHTML(deck, card, positionText) {
 
   const pos = escapeHTML(safeText(positionText));
 
-  const hasImage = !!card?.image?.src;
-  const imgSrc = hasImage ? escapeHTML(card.image.src) : "";
-  const imgAlt = hasImage ? escapeHTML(card.image.alt || "Illustration") : "";
+  const img = resolveCardImage(card);
+  const imgSrc = escapeHTML(img.src);
+  const imgAlt = escapeHTML(img.alt);
 
   return `
     <article class="card">
@@ -109,11 +129,9 @@ function cardHTML(deck, card, positionText) {
 
       <h2 class="card__title">${notion}</h2>
 
-      ${hasImage ? `
-        <div class="card__media">
-          <img class="card__img" src="${imgSrc}" alt="${imgAlt}" loading="lazy" />
-        </div>
-      ` : ""}
+      <div class="card__media">
+        <img class="card__img" src="${imgSrc}" alt="${imgAlt}" loading="lazy" />
+      </div>
 
       <div class="card__sections">
         <section class="section">
@@ -187,17 +205,18 @@ async function loadNewModelDecks() {
     throw new Error('Deck index présent mais vide (champ "decks").');
   }
 
-  return decks.map((d) => ({
-    id: String(d.id || "").trim(),
-    title: String(d.title || "").trim(),
-    file: String(d.file || "").trim()
-  })).filter((d) => d.id && d.file);
+  return decks
+    .map((d) => ({
+      id: String(d.id || "").trim(),
+      title: String(d.title || "").trim(),
+      file: String(d.file || "").trim()
+    }))
+    .filter((d) => d.id && d.file);
 }
 
 async function loadDeckFile(deckMeta) {
   const deckUrl = new URL(deckMeta.file, DECKS_DIR);
   const rawDeck = await fetchJSON(deckUrl);
-  // deckMeta.id sert de fallback stable
   return normalizeDeck(rawDeck, deckMeta.id);
 }
 
@@ -205,7 +224,6 @@ async function loadLegacyAsDeck() {
   const legacyIndex = await fetchJSON(LEGACY_INDEX_URL);
   const entries = Array.isArray(legacyIndex?.cards) ? legacyIndex.cards : [];
 
-  // On mappe legacy -> format deck
   const cards = [];
 
   for (const entry of entries) {
@@ -262,10 +280,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const btnNext = $("btn-next");
   const btnRandom = $("btn-random");
 
-  // State
-  let mode = "new"; // "new" | "legacy"
+  let mode = "new";
   let decksMeta = [];
-  let currentDeckMeta = null;
   let currentDeck = null;
   let currentIndex = 0;
 
@@ -278,16 +294,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     const meta = decksMeta.find((d) => d.id === deckId) || decksMeta[0];
-    currentDeckMeta = meta;
-
     currentDeck = await loadDeckFile(meta);
 
-    // Restore index (per deck)
     currentIndex = Math.max(0, Math.min(loadSavedIndex(currentDeck.id), currentDeck.cards.length - 1));
     renderSingleCard(currentDeck, currentIndex);
   }
 
-  // Events
   if (deckSelect) {
     deckSelect.addEventListener("change", async (e) => {
       const id = e.target.value;
@@ -322,9 +334,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       let next = currentIndex;
-      while (next === currentIndex) {
-        next = Math.floor(Math.random() * n);
-      }
+      while (next === currentIndex) next = Math.floor(Math.random() * n);
 
       currentIndex = next;
       saveIndex(currentDeck.id, currentIndex);
@@ -332,13 +342,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   }
 
-  // Boot
   try {
-    // Nouveau modèle (decks)
     decksMeta = await loadNewModelDecks();
     mode = "new";
 
-    // Deck par défaut: premier de la liste
     const selectedId = decksMeta[0].id;
     fillDeckSelect(decksMeta, selectedId);
 
@@ -347,10 +354,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.warn("New model decks not available, fallback to legacy:", errNew);
 
     try {
-      // Fallback legacy
       mode = "legacy";
       fillDeckSelect([{ id: "legacy", title: "Deck (legacy)" }], "legacy");
-
       await loadDeckById("legacy");
     } catch (errLegacy) {
       console.error(errLegacy);
