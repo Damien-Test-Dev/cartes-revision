@@ -1,0 +1,76 @@
+{
+  "id": "istqb-fl-fr-ch2",
+  "title": "ISTQB Foundation (FR) — Chapitre 2",
+  "cards": [
+    {
+      "id": "001",
+      "lo": "FL-2.1.1",
+      "notion": "Impact du cycle de vie sur le test",
+      "explication": "Le cycle de vie choisi (séquentiel, itératif, incrémental, agile, etc.) influence la stratégie de test : quand tester, quoi tester, quels niveaux/types de tests prioriser, et comment gérer les risques et la traçabilité.",
+      "exemple": "En Agile, les tests sont intégrés au sprint (feedback rapide). En V-cycle, les niveaux de test sont planifiés avec forte traçabilité exigences↔tests."
+    },
+    {
+      "id": "002",
+      "lo": "FL-2.1.2",
+      "notion": "Bonnes pratiques de test valables pour tous les cycles de vie",
+      "explication": "Certaines pratiques restent efficaces quel que soit le cycle de vie : tester tôt, baser les tests sur le risque, définir des critères d’entrée/sortie, maintenir une traçabilité adaptée, et produire des résultats exploitables pour la décision.",
+      "exemple": "Même en Agile, on définit des critères d’acceptation et un niveau minimal de non-régression avant mise en production."
+    },
+    {
+      "id": "003",
+      "lo": "FL-2.1.3",
+      "notion": "Développement piloté par les tests (approches)",
+      "explication": "Les approches pilotées par les tests consistent à utiliser les tests comme moteur de conception et de feedback. Elles améliorent la qualité du design, la couverture et la prévention des défauts via une boucle rapide.",
+      "exemple": "TDD : écrire un test unitaire, coder juste assez pour le passer, refactorer. BDD : scénarios en langage métier utilisés comme base de validation."
+    },
+    {
+      "id": "004",
+      "lo": "FL-2.1.4",
+      "notion": "DevOps : impact potentiel sur le test",
+      "explication": "DevOps accélère les cycles de livraison (CI/CD) et renforce l’automatisation. Le test doit s’adapter : plus de tests automatisés, feedback plus rapide, surveillance en production, et collaboration renforcée entre dev, ops et QA.",
+      "exemple": "Pipeline CI : tests unitaires + intégration + smoke à chaque commit ; monitoring prod détecte des dégradations non vues en pré-prod."
+    },
+    {
+      "id": "005",
+      "lo": "FL-2.1.5",
+      "notion": "Approche shift-left",
+      "explication": "Shift-left = déplacer des activités de test plus tôt dans le cycle de vie afin de détecter les défauts au plus bas coût. Cela inclut revues, tests précoces, définition claire des critères et outillage de feedback rapide.",
+      "exemple": "Revue des exigences + tests de composants dès le début → moins de défauts découverts en test système."
+    },
+    {
+      "id": "006",
+      "lo": "FL-2.1.6",
+      "notion": "Rétrospectives : levier d’amélioration de processus",
+      "explication": "Les rétrospectives permettent d’identifier ce qui a bien fonctionné, ce qui a échoué et les actions d’amélioration. Elles transforment les incidents/retours tests en amélioration continue du process de dev et de test.",
+      "exemple": "Après une régression en prod, l’équipe décide d’ajouter un test automatisé + une règle de revue sur la zone de code concernée."
+    },
+    {
+      "id": "007",
+      "lo": "FL-2.2.1",
+      "notion": "Niveaux de test",
+      "explication": "Les niveaux de test correspondent à des objectifs différents selon la granularité : tests de composants, tests d’intégration de composants, tests système, tests d’acceptation. Chaque niveau réduit un type de risque spécifique.",
+      "exemple": "Composant : tester une fonction. Intégration : échanges entre modules. Système : comportement end-to-end. Acceptation : validation métier avec critères d’acceptation."
+    },
+    {
+      "id": "008",
+      "lo": "FL-2.2.2",
+      "notion": "Types de tests",
+      "explication": "Les types de tests ciblent des caractéristiques : fonctionnels (ce que fait le système) et non fonctionnels (performance, sécurité, utilisabilité, etc.), ainsi que des tests liés au changement (régression/confirmation).",
+      "exemple": "Fonctionnel : calcul de remise. Non fonctionnel : temps de réponse < 300ms. Lié au changement : rejouer une non-régression après correctif."
+    },
+    {
+      "id": "009",
+      "lo": "FL-2.2.3",
+      "notion": "Test de confirmation vs test de régression",
+      "explication": "Le test de confirmation vérifie qu’un défaut corrigé est effectivement résolu. Le test de régression vérifie qu’un changement n’a pas introduit de nouveaux défauts ou cassé des fonctionnalités existantes.",
+      "exemple": "Confirmation : rejouer le scénario qui plantait avant correctif. Régression : rejouer la suite de non-régression sur le parcours paiement complet."
+    },
+    {
+      "id": "010",
+      "lo": "FL-2.3.1",
+      "notion": "Tests de maintenance et déclencheurs",
+      "explication": "Les tests de maintenance sont exécutés lors de modifications sur un système en production : corrections, évolutions, migrations, patchs, changements d’environnement. Ils combinent confirmation + régression + tests ciblés sur les zones impactées.",
+      "exemple": "Migration de base de données : tests d’intégration + non-régression + vérification des performances et de l’intégrité des données."
+    }
+  ]
+}
