@@ -11,66 +11,122 @@
     },
     {
       "id": "002",
-      "lo": "FL-2.1.2",
-      "notion": "Bonnes pratiques de test valables pour tous les cycles de vie",
-      "explication": "Certaines pratiques restent efficaces quel que soit le cycle de vie : tester tôt, baser les tests sur le risque, définir des critères d’entrée/sortie, maintenir une traçabilité adaptée, et produire des résultats exploitables pour la décision.",
-      "exemple": "Même en Agile, on définit des critères d’acceptation et un niveau minimal de non-régression avant mise en production."
+      "lo": "FL-2.1.1",
+      "notion": "Exemples d’impacts (Agile vs séquentiel)",
+      "explication": "Un cycle itératif favorise le feedback rapide et des tests fréquents. Un cycle séquentiel favorise une planification plus formelle, une documentation plus structurée et des jalons de validation explicites.",
+      "exemple": "Agile : test continu + automatisation. Séquentiel : tests système et acceptation en phases dédiées."
     },
     {
       "id": "003",
-      "lo": "FL-2.1.3",
-      "notion": "Développement piloté par les tests (approches)",
-      "explication": "Les approches pilotées par les tests consistent à utiliser les tests comme moteur de conception et de feedback. Elles améliorent la qualité du design, la couverture et la prévention des défauts via une boucle rapide.",
-      "exemple": "TDD : écrire un test unitaire, coder juste assez pour le passer, refactorer. BDD : scénarios en langage métier utilisés comme base de validation."
+      "lo": "FL-2.1.2",
+      "notion": "Bonnes pratiques de test transverses",
+      "explication": "Indépendamment du cycle : baser les tests sur le risque, définir des critères d’entrée/sortie, tester tôt, assurer la traçabilité utile, produire des résultats exploitables, et aligner tests et objectifs projet.",
+      "exemple": "Même en Agile, définir des critères d’acceptation et un niveau minimal de non-régression avant release."
     },
     {
       "id": "004",
-      "lo": "FL-2.1.4",
-      "notion": "DevOps : impact potentiel sur le test",
-      "explication": "DevOps accélère les cycles de livraison (CI/CD) et renforce l’automatisation. Le test doit s’adapter : plus de tests automatisés, feedback plus rapide, surveillance en production, et collaboration renforcée entre dev, ops et QA.",
-      "exemple": "Pipeline CI : tests unitaires + intégration + smoke à chaque commit ; monitoring prod détecte des dégradations non vues en pré-prod."
+      "lo": "FL-2.1.2",
+      "notion": "Critères d’entrée / sortie (gating)",
+      "explication": "Les critères d’entrée/sortie cadrent le lancement et la clôture d’un niveau de test. Ils limitent le risque de passer à l’étape suivante avec un produit instable ou insuffisamment testé.",
+      "exemple": "Sortie test système : 0 défaut critique ouvert + taux de réussite non-régression ≥ 95%."
     },
     {
       "id": "005",
-      "lo": "FL-2.1.5",
-      "notion": "Approche shift-left",
-      "explication": "Shift-left = déplacer des activités de test plus tôt dans le cycle de vie afin de détecter les défauts au plus bas coût. Cela inclut revues, tests précoces, définition claire des critères et outillage de feedback rapide.",
-      "exemple": "Revue des exigences + tests de composants dès le début → moins de défauts découverts en test système."
+      "lo": "FL-2.1.3",
+      "notion": "TDD : idée clé",
+      "explication": "TDD utilise des tests (souvent unitaires) comme guide de conception : écrire un test, le faire passer, refactorer. Cela crée un feedback rapide et limite les défauts.",
+      "exemple": "Écrire un test pour une règle de calcul, coder le minimum, refactorer en gardant les tests verts."
     },
     {
       "id": "006",
-      "lo": "FL-2.1.6",
-      "notion": "Rétrospectives : levier d’amélioration de processus",
-      "explication": "Les rétrospectives permettent d’identifier ce qui a bien fonctionné, ce qui a échoué et les actions d’amélioration. Elles transforment les incidents/retours tests en amélioration continue du process de dev et de test.",
-      "exemple": "Après une régression en prod, l’équipe décide d’ajouter un test automatisé + une règle de revue sur la zone de code concernée."
+      "lo": "FL-2.1.3",
+      "notion": "BDD : idée clé",
+      "explication": "BDD exprime le comportement attendu en scénarios orientés métier (Given/When/Then). Ces scénarios servent de base de validation et facilitent l’alignement business↔tech.",
+      "exemple": "Given panier > 100€, When appliquer remise, Then remise 10% affichée et total recalculé."
     },
     {
       "id": "007",
-      "lo": "FL-2.2.1",
-      "notion": "Niveaux de test",
-      "explication": "Les niveaux de test correspondent à des objectifs différents selon la granularité : tests de composants, tests d’intégration de composants, tests système, tests d’acceptation. Chaque niveau réduit un type de risque spécifique.",
-      "exemple": "Composant : tester une fonction. Intégration : échanges entre modules. Système : comportement end-to-end. Acceptation : validation métier avec critères d’acceptation."
+      "lo": "FL-2.1.4",
+      "notion": "DevOps : impact sur le test",
+      "explication": "DevOps accélère la livraison via CI/CD et encourage l’automatisation. Le test s’adapte : plus d’automatisation, feedback rapide, environnements proches prod, et monitoring en production.",
+      "exemple": "Pipeline CI : tests unitaires + intégration + smoke à chaque commit ; monitoring prod détecte des dégradations non vues en pré-prod."
     },
     {
       "id": "008",
-      "lo": "FL-2.2.2",
-      "notion": "Types de tests",
-      "explication": "Les types de tests ciblent des caractéristiques : fonctionnels (ce que fait le système) et non fonctionnels (performance, sécurité, utilisabilité, etc.), ainsi que des tests liés au changement (régression/confirmation).",
-      "exemple": "Fonctionnel : calcul de remise. Non fonctionnel : temps de réponse < 300ms. Lié au changement : rejouer une non-régression après correctif."
+      "lo": "FL-2.1.4",
+      "notion": "CI/CD : implication test",
+      "explication": "CI/CD implique d’exécuter des tests fréquemment (à chaque commit / merge). La sélection de tests devient stratégique (rapides vs lents) pour garder un time-to-feedback court.",
+      "exemple": "Unitaires en 3 minutes à chaque commit, non-régression E2E la nuit, et smoke avant déploiement."
     },
     {
       "id": "009",
-      "lo": "FL-2.2.3",
-      "notion": "Test de confirmation vs test de régression",
-      "explication": "Le test de confirmation vérifie qu’un défaut corrigé est effectivement résolu. Le test de régression vérifie qu’un changement n’a pas introduit de nouveaux défauts ou cassé des fonctionnalités existantes.",
-      "exemple": "Confirmation : rejouer le scénario qui plantait avant correctif. Régression : rejouer la suite de non-régression sur le parcours paiement complet."
+      "lo": "FL-2.1.5",
+      "notion": "Approche shift-left",
+      "explication": "Shift-left = déplacer les activités de test plus tôt (revues, tests précoces, qualité des exigences, automatisation). Objectif : détecter les défauts au plus bas coût.",
+      "exemple": "Revue des exigences + tests de composants dès le début → moins de défauts découverts en test système."
     },
     {
       "id": "010",
+      "lo": "FL-2.1.6",
+      "notion": "Rétrospectives = amélioration continue",
+      "explication": "Les rétrospectives servent à apprendre de l’expérience et à améliorer le process. Elles transforment les incidents/retours tests en actions concrètes.",
+      "exemple": "Après une régression en prod : action = ajouter un test automatisé + renforcer la revue sur la zone de code concernée."
+    },
+    {
+      "id": "011",
+      "lo": "FL-2.2.1",
+      "notion": "Niveaux de test : vue d’ensemble",
+      "explication": "Les niveaux de test se distinguent par la granularité et l’objectif : composant, intégration de composants, système, acceptation. Chaque niveau cible des risques spécifiques.",
+      "exemple": "Composant : logique interne. Intégration : interfaces. Système : flux end-to-end. Acceptation : validation métier."
+    },
+    {
+      "id": "012",
+      "lo": "FL-2.2.1",
+      "notion": "Test de composants",
+      "explication": "Le test de composants vérifie le comportement d’unités isolées (fonctions, classes) et détecte tôt des erreurs de logique. Il est souvent automatisé et rapide.",
+      "exemple": "Tester une fonction de calcul de TVA avec cas nominal, cas limite, et entrées invalides."
+    },
+    {
+      "id": "013",
+      "lo": "FL-2.2.1",
+      "notion": "Test d’intégration",
+      "explication": "Le test d’intégration vérifie les interactions entre composants/systèmes (interfaces, données, protocoles). Il cible les défauts de communication et de contrat.",
+      "exemple": "Tester l’échange entre le service panier et le service paiement (format payload, codes retour, gestion d’erreur)."
+    },
+    {
+      "id": "014",
+      "lo": "FL-2.2.1",
+      "notion": "Test système & test d’acceptation",
+      "explication": "Le test système valide le comportement du système complet par rapport aux spécifications. Le test d’acceptation valide que le système satisfait le besoin utilisateur/métier (souvent avec critères d’acceptation).",
+      "exemple": "Système : parcours commande complet. Acceptation : critères métier validés par PO/utilisateur."
+    },
+    {
+      "id": "015",
+      "lo": "FL-2.2.2",
+      "notion": "Types de tests : fonctionnels vs non fonctionnels",
+      "explication": "Les tests fonctionnels vérifient les fonctionnalités et règles métier. Les tests non fonctionnels vérifient des qualités : performance, sécurité, compatibilité, utilisabilité, etc.",
+      "exemple": "Fonctionnel : application d’une remise. Non fonctionnel : temps de réponse < 300ms sur le calcul de remise."
+    },
+    {
+      "id": "016",
+      "lo": "FL-2.2.2",
+      "notion": "Boîte noire vs boîte blanche",
+      "explication": "Les tests boîte noire se basent sur les entrées/sorties et le comportement attendu, sans considérer le code. Les tests boîte blanche se basent sur la structure interne (branches, conditions, chemins).",
+      "exemple": "Boîte noire : partitions d’équivalence sur un champ. Boîte blanche : couverture de branches d’une fonction."
+    },
+    {
+      "id": "017",
+      "lo": "FL-2.2.3",
+      "notion": "Confirmation vs régression",
+      "explication": "La confirmation vérifie que le défaut corrigé est résolu. La régression vérifie qu’un changement n’a pas cassé d’autres parties du système.",
+      "exemple": "Confirmation : rejouer le scénario qui échouait. Régression : rejouer la suite non-régression sur des flux critiques."
+    },
+    {
+      "id": "018",
       "lo": "FL-2.3.1",
-      "notion": "Tests de maintenance et déclencheurs",
-      "explication": "Les tests de maintenance sont exécutés lors de modifications sur un système en production : corrections, évolutions, migrations, patchs, changements d’environnement. Ils combinent confirmation + régression + tests ciblés sur les zones impactées.",
-      "exemple": "Migration de base de données : tests d’intégration + non-régression + vérification des performances et de l’intégrité des données."
+      "notion": "Tests de maintenance : déclencheurs",
+      "explication": "Les tests de maintenance sont déclenchés par corrections, évolutions, migrations, patchs et changements d’environnement. Ils combinent confirmation + régression + tests ciblés sur l’impact.",
+      "exemple": "Migration de base de données : tests d’intégration + non-régression + contrôles d’intégrité et de performance."
     }
   ]
 }
