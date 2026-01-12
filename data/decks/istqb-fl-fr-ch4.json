@@ -1,0 +1,122 @@
+{
+  "id": "istqb-fl-fr-ch4",
+  "title": "ISTQB Foundation (FR) — Chapitre 4 (Techniques de test)",
+  "cards": [
+    {
+      "id": "001",
+      "lo": "CH4-1",
+      "notion": "Catégories de techniques de test",
+      "explication": "Les techniques de test structurent la conception des cas de test : elles aident à concevoir des tests efficaces, améliorer la couverture et réduire le nombre de tests nécessaires. On choisit une technique selon le contexte.",
+      "exemple": "Pour des règles métier complexes, une table de décision est souvent plus pertinente qu’un simple test au feeling."
+    },
+    {
+      "id": "002",
+      "lo": "CH4-1",
+      "notion": "3 catégories (Foundation)",
+      "explication": "Au niveau Foundation, on distingue trois catégories : techniques basées sur la spécification (boîte noire), basées sur la structure (boîte blanche) et basées sur l’expérience.",
+      "exemple": "Boîte noire : partitionnement. Boîte blanche : couverture des décisions. Expérience : test exploratoire."
+    },
+
+    {
+      "id": "003",
+      "lo": "CH4-2",
+      "notion": "Boîte noire (spécification)",
+      "explication": "Les techniques boîte noire se basent sur les exigences et le comportement observable. La structure interne du code n’est pas prise en compte.",
+      "exemple": "Tester un formulaire selon règles métier (formats, champs obligatoires) sans regarder le code."
+    },
+    {
+      "id": "004",
+      "lo": "CH4-2.1",
+      "notion": "Classes d’équivalence",
+      "explication": "On divise les entrées en classes qui produisent un comportement similaire. En général, un test par classe est suffisant. Les classes peuvent être valides ou invalides.",
+      "exemple": "Âge autorisé 18–65 : classes valides [18..65], invalides [<18], [>65]."
+    },
+    {
+      "id": "005",
+      "lo": "CH4-2.2",
+      "notion": "Analyse des valeurs limites",
+      "explication": "Les défauts se situent souvent aux frontières. On teste les valeurs min/max et juste en dessous/au-dessus. Cette technique complète le partitionnement.",
+      "exemple": "Âge 18–65 : tester 17, 18, 19, 64, 65, 66."
+    },
+    {
+      "id": "006",
+      "lo": "CH4-2.3",
+      "notion": "Table de décision",
+      "explication": "Une table de décision modélise des règles métier via des conditions et des actions. Chaque règle (combinaison) devient un cas de test. Idéal pour logiques combinatoires.",
+      "exemple": "Remise si (client premium) ET (panier > 100) : table avec toutes les combinaisons et actions attendues."
+    },
+    {
+      "id": "007",
+      "lo": "CH4-2.4",
+      "notion": "Transitions d’état",
+      "explication": "On modélise le système par des états et des transitions. Les tests couvrent les transitions et les états, y compris des séquences invalides.",
+      "exemple": "Commande : Créée → Payée → Expédiée → Livrée. Tester aussi “Expédiée sans paiement” (invalide)."
+    },
+
+    {
+      "id": "008",
+      "lo": "CH4-3",
+      "notion": "Boîte blanche (structure)",
+      "explication": "Les techniques boîte blanche utilisent la structure interne (souvent le code). Elles mesurent la couverture (instructions, décisions) et aident à détecter des défauts logiques.",
+      "exemple": "Assurer que toutes les branches d’un if/else ont été exécutées au moins une fois."
+    },
+    {
+      "id": "009",
+      "lo": "CH4-3.1",
+      "notion": "Couverture des instructions",
+      "explication": "La couverture des instructions exige que chaque instruction exécutable soit exécutée. Elle est exprimée en %. Une couverture élevée ne prouve pas l’absence de défauts.",
+      "exemple": "Une fonction de 10 instructions : si 8 exécutées → 80% de couverture des instructions."
+    },
+    {
+      "id": "010",
+      "lo": "CH4-3.2",
+      "notion": "Couverture des décisions",
+      "explication": "La couverture des décisions exige que chaque décision produise tous les résultats possibles (true/false). Plus forte que la couverture des instructions, elle expose des défauts de logique.",
+      "exemple": "Condition `x > 0` : exécuter un test où c’est vrai (x=1) et un test où c’est faux (x=0)."
+    },
+
+    {
+      "id": "011",
+      "lo": "CH4-4",
+      "notion": "Techniques basées sur l’expérience",
+      "explication": "Elles reposent sur l’expérience du testeur : connaissance du domaine, zones à risque, défauts historiques. Elles complètent les techniques structurées.",
+      "exemple": "Sur un module déjà instable, cibler des scénarios connus pour casser (historique incidents)."
+    },
+    {
+      "id": "012",
+      "lo": "CH4-4.1",
+      "notion": "Test basé sur l’expérience",
+      "explication": "Le testeur anticipe les zones à risque et conçoit les tests en s’appuyant sur sa connaissance du système et du contexte.",
+      "exemple": "Prioriser les tests sur les paiements si c’est critique business et historiquement fragile."
+    },
+    {
+      "id": "013",
+      "lo": "CH4-4.2",
+      "notion": "Test exploratoire",
+      "explication": "La conception et l’exécution se font simultanément. Les tests évoluent en fonction des observations. L’apprentissage guide les tests suivants.",
+      "exemple": "Explorer une nouvelle feature : tester, observer, ajuster les scénarios en temps réel."
+    },
+    {
+      "id": "014",
+      "lo": "CH4-4.3",
+      "notion": "Attaque par fautes (error guessing)",
+      "explication": "On liste des erreurs probables basées sur l’expérience et les défauts passés, puis on conçoit des tests ciblant ces hypothèses.",
+      "exemple": "Hypothèse : erreurs sur formats dates → tester 31/02, 29/02 hors année bissextile, timezone, etc."
+    },
+
+    {
+      "id": "015",
+      "lo": "CH4-5",
+      "notion": "Choix des techniques",
+      "explication": "Le choix dépend du système, des exigences, du niveau de test, du risque. Plusieurs techniques peuvent être combinées pour maximiser la détection.",
+      "exemple": "Feature critique : boîte noire (BVA) + boîte blanche (décision) + exploratoire pour surprendre le système."
+    },
+    {
+      "id": "016",
+      "lo": "CH4-6",
+      "notion": "Message clé (Chapitre 4)",
+      "explication": "Les techniques structurent la conception des tests. Aucune technique ne suffit seule : combiner les catégories améliore la détection des défauts et l’efficacité du test.",
+      "exemple": "Partitionnement + valeurs limites + exploratoire : couverture + détection + surprise."
+    }
+  ]
+}
