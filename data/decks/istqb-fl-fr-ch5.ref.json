@@ -1,0 +1,47 @@
+{
+  "id": "istqb-fl-fr-ch5-ref",
+  "chapterNumber": 5,
+  "chapterName": "Gestion des tests",
+  "keywords": [
+    "organisation des tests",
+    "planification des tests",
+    "surveillance des tests",
+    "contrôle des tests",
+    "achèvement des tests",
+    "gestion de la configuration",
+    "risque produit",
+    "risque projet",
+    "priorisation par le risque",
+    "gestion des défauts",
+    "sévérité",
+    "priorité",
+    "métriques",
+    "rapports de test",
+    "compétences du testeur",
+    "éthique"
+  ],
+  "outline": [
+    { "section": "5.1", "title": "Organisation des tests" },
+    { "section": "5.2", "title": "Planification des tests" },
+    { "section": "5.3", "title": "Surveillance et contrôle des tests" },
+    { "section": "5.4", "title": "Achèvement des tests" },
+    { "section": "5.5", "title": "Gestion de la configuration" },
+    { "section": "5.6", "title": "Risques et tests" },
+    { "section": "5.7", "title": "Gestion des défauts" },
+    { "section": "5.8", "title": "Métriques et rapports de test" },
+    { "section": "5.9", "title": "Compétences et rôles du testeur" },
+    { "section": "5.10", "title": "Message clé du chapitre" }
+  ],
+  "expected": [
+    "CH5-1",
+    "CH5-2",
+    "CH5-3",
+    "CH5-4",
+    "CH5-5",
+    "CH5-6",
+    "CH5-7",
+    "CH5-8",
+    "CH5-9",
+    "CH5-10"
+  ]
+}
