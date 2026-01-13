@@ -1,0 +1,34 @@
+{
+  "id": "istqb-fl-fr-ch6-ref",
+  "chapterNumber": 6,
+  "chapterName": "Outils de test",
+  "keywords": [
+    "outils de test",
+    "bénéfices",
+    "risques",
+    "automatisation",
+    "gestion des tests",
+    "suivi des défauts",
+    "analyse statique",
+    "performance",
+    "monitoring",
+    "sélection d’outil",
+    "intégration CI/CD",
+    "ROI",
+    "TCO",
+    "pilotage",
+    "gouvernance"
+  ],
+  "outline": [
+    { "section": "6.1", "title": "Bénéfices et risques de l’utilisation des outils" },
+    { "section": "6.2", "title": "Catégories d’outils de test" },
+    { "section": "6.3", "title": "Sélection et mise en place des outils" },
+    { "section": "6.4", "title": "Message clé du chapitre" }
+  ],
+  "expected": [
+    "CH6-1",
+    "CH6-2",
+    "CH6-3",
+    "CH6-4"
+  ]
+}
