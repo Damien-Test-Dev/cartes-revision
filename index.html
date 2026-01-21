@@ -8,31 +8,43 @@
   </head>
 
   <body>
+    <!-- Header minimal (branding only) -->
     <header class="topbar" role="banner">
       <div class="topbar__inner">
         <h1 class="topbar__title">ISTQB Révision</h1>
-
-        <div class="topbar__controls" role="group" aria-label="Contrôles de révision">
-          <label class="control">
-            <span class="control__label">Deck</span>
-            <select id="deck-select" class="control__select" aria-label="Choisir un deck"></select>
-          </label>
-
-          <button id="btn-random" class="btn" type="button">Aléatoire</button>
-          <button id="btn-next" class="btn btn--primary" type="button">Suivant</button>
-        </div>
       </div>
     </header>
 
-    <main class="app" role="main">
-      <section id="cards" class="cards" aria-live="polite"></section>
+    <!-- ✅ Layout principal : sidebar gauche + zone carte -->
+    <div class="layout">
+      <!-- Sidebar (contrôles latéraux) -->
+      <aside class="sidebar" aria-label="Menu latéral">
+        <div class="sidebar__block">
+          <label class="control control--stack">
+            <span class="control__label">Deck</span>
+            <select id="deck-select" class="control__select" aria-label="Choisir un deck"></select>
+          </label>
+        </div>
 
-      <!-- Audit : reste caché sauf si manquants / erreur -->
-      <div id="audit" class="audit" hidden></div>
-    </main>
+        <div class="sidebar__block sidebar__block--buttons" role="group" aria-label="Actions">
+          <button id="btn-random" class="sbtn" type="button" title="Carte aléatoire">
+            🎲 <span>Aléatoire</span>
+          </button>
+          <button id="btn-next" class="sbtn sbtn--primary" type="button" title="Carte suivante">
+            ➜ <span>Suivant</span>
+          </button>
+        </div>
+      </aside>
 
-    <!-- ✅ Tous les messages (couverture, manquants, “Deck complet ✅”) en bas -->
+      <!-- Main : la carte doit être l’unique focus -->
+      <main class="app" role="main">
+        <section id="cards" class="cards" aria-live="polite"></section>
+      </main>
+    </div>
+
+    <!-- ✅ Footer : statut + audit (audit reste discret, mais en bas) -->
     <footer class="bottombar" role="contentinfo">
+      <div id="audit" class="audit" hidden></div>
       <p id="status" class="status" data-state="ok">Chargement…</p>
     </footer>
 
