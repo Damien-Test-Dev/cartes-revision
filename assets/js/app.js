@@ -1,6 +1,16 @@
 /**
- * App de révision (statique) — compatible iOS 12
- * + Sidebar toggle UX (mobile/tablet)
+ * ISTQB Révision — App statique (GitHub Pages)
+ * Compatible iOS 12
+ *
+ * Data:
+ * - Catalogue: data/decks/index.json -> decks[]
+ * - Deck: data/decks/<file>.json -> { id, title, cards[] }
+ * - Ref (optionnel): data/decks/<deckId>.ref.json -> { expected[] }
+ *
+ * UI:
+ * - Sidebar gauche: deck-select + boutons
+ * - Carte: notion + explication + exemple + image
+ * - Footer: status + audit (manquants)
  */
 
 var ROOT_DIR = new URL("./", document.baseURI);
@@ -69,6 +79,36 @@ function fetchJSON(urlObj) {
   });
 }
 
+/* -----------------------------
+   Storage: garder la progression par deck
+----------------------------- */
+
+function storageKey(deckId) {
+  return "istqb-revision:deck:" + deckId + ":index";
+}
+
+function loadSavedIndex(deckId) {
+  try {
+    var raw = localStorage.getItem(storageKey(deckId));
+    var n = Number(raw);
+    return Number.isFinite(n) ? n : 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function saveIndex(deckId, index) {
+  try {
+    localStorage.setItem(storageKey(deckId), String(index));
+  } catch (e) {
+    // ignore
+  }
+}
+
+/* -----------------------------
+   Data model
+----------------------------- */
+
 function normalizeDeck(rawDeck, fallbackId) {
   if (!fallbackId) fallbackId = "deck";
 
@@ -115,6 +155,10 @@ function resolveCardImage(card) {
   return DEFAULT_CARD_IMAGE;
 }
 
+/* -----------------------------
+   Ref coverage
+----------------------------- */
+
 function looksLikeRefCode(s) {
   if (!s) return false;
   var x = String(s).trim();
@@ -141,7 +185,14 @@ function normalizeRef(rawRef) {
 
 function computeCoverage(deck, ref) {
   if (!ref || !ref.expected || ref.expected.length === 0) {
-    return { hasRef: false, expectedTotal: 0, coveredCount: 0, missing: [], matchMode: null, cardIsReferenced: function () { return false; } };
+    return {
+      hasRef: false,
+      expectedTotal: 0,
+      coveredCount: 0,
+      missing: [],
+      matchMode: null,
+      cardIsReferenced: function () { return false; }
+    };
   }
 
   function cardKey(card) {
@@ -172,6 +223,10 @@ function computeCoverage(deck, ref) {
   };
 }
 
+/* -----------------------------
+   Rendering
+----------------------------- */
+
 function cardHTML(deck, card, posText, coverage) {
   var deckTitle = escapeHTML(safeText(deck && deck.title));
   var notion = escapeHTML(safeText(card && card.notion));
@@ -200,9 +255,57 @@ function cardHTML(deck, card, posText, coverage) {
   );
 }
 
+function render(deck, index, coverage) {
+  var container = $("cards");
+  if (!container || !deck) return;
+
+  var total = deck.cards.length;
+  if (total === 0) {
+    container.innerHTML = '<article class="card"><h2 class="card__title">Aucune carte</h2></article>';
+    setStatus("Deck vide.", true);
+    setAudit("", false);
+    setControlsEnabled(false);
+    return;
+  }
+
+  if (index < 0) index = 0;
+  if (index > total - 1) index = total - 1;
+
+  var posText = (index + 1) + "/" + total;
+  var card = deck.cards[index];
+
+  container.innerHTML = cardHTML(deck, card, posText, coverage);
+
+  if (coverage && coverage.hasRef) {
+    var missingCount = coverage.missing.length;
+    if (missingCount > 0) {
+      setStatus(
+        "Deck: " + deck.title + " — " + posText +
+          " • Couverture " + coverage.coveredCount + "/" + coverage.expectedTotal +
+          " — Manquants: " + missingCount,
+        true
+      );
+      setAudit("Manquants (" + missingCount + ") : " + coverage.missing.join(", "), true);
+    } else {
+      setStatus("Deck: " + deck.title + " — " + posText + " • Deck complet ✅", false);
+      setAudit("", false);
+    }
+  } else {
+    setStatus("Deck: " + deck.title + " — " + posText, false);
+    setAudit("", false);
+  }
+
+  setControlsEnabled(true);
+}
+
+/* -----------------------------
+   Loading decks
+----------------------------- */
+
 function fillDeckSelect(options, selectedId) {
   var select = $("deck-select");
   if (!select) return;
+
   select.innerHTML = options
     .map(function (d) {
       var id = escapeHTML(d.id);
@@ -236,53 +339,14 @@ function tryLoadDeckRef(deckId) {
   return fetchJSON(refUrl).then(function (rawRef) { return normalizeRef(rawRef); }).catch(function () { return null; });
 }
 
-/* ✅ Sidebar UX (mobile/tablet) */
-function initSidebarUX() {
-  var btn = $("sidebar-toggle");
-  var overlay = $("overlay");
-  var sidebar = $("sidebar");
-  if (!btn || !overlay || !sidebar) return;
-
-  function openMenu() {
-    document.body.classList.add("sidebar-open");
-    overlay.hidden = false;
-    btn.setAttribute("aria-expanded", "true");
-  }
-
-  function closeMenu() {
-    document.body.classList.remove("sidebar-open");
-    overlay.hidden = true;
-    btn.setAttribute("aria-expanded", "false");
-  }
-
-  btn.addEventListener("click", function () {
-    if (document.body.classList.contains("sidebar-open")) closeMenu();
-    else openMenu();
-  });
-
-  overlay.addEventListener("click", function () {
-    closeMenu();
-  });
-
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") closeMenu();
-  });
-
-  // Si on choisit un deck sur mobile, on ferme le menu (UX)
-  var deckSelect = $("deck-select");
-  if (deckSelect) {
-    deckSelect.addEventListener("change", function () {
-      closeMenu();
-    });
-  }
-}
+/* -----------------------------
+   Bootstrap
+----------------------------- */
 
 document.addEventListener("DOMContentLoaded", function () {
   setControlsEnabled(false);
   setStatus("Chargement…", false);
   setAudit("", false);
-
-  initSidebarUX();
 
   var deckSelect = $("deck-select");
   var btnNext = $("btn-next");
@@ -293,66 +357,35 @@ document.addEventListener("DOMContentLoaded", function () {
   var currentIndex = 0;
   var currentCoverage = null;
 
-  function render() {
-    var container = $("cards");
-    if (!container || !currentDeck) return;
-
-    var total = currentDeck.cards.length;
-    if (total === 0) {
-      container.innerHTML = '<article class="card"><h2 class="card__title">Aucune carte</h2></article>';
-      setStatus("Deck vide.", true);
-      return;
-    }
-
-    if (currentIndex < 0) currentIndex = 0;
-    if (currentIndex > total - 1) currentIndex = total - 1;
-
-    var posText = (currentIndex + 1) + "/" + total;
-    var card = currentDeck.cards[currentIndex];
-
-    container.innerHTML = cardHTML(currentDeck, card, posText, currentCoverage);
-
-    if (currentCoverage && currentCoverage.hasRef) {
-      var missingCount = currentCoverage.missing.length;
-      if (missingCount > 0) {
-        setStatus("Deck: " + currentDeck.title + " — " + posText + " • Couverture " + currentCoverage.coveredCount + "/" + currentCoverage.expectedTotal + " — Manquants: " + missingCount, true);
-        setAudit("Manquants (" + missingCount + ") : " + currentCoverage.missing.join(", "), true);
-      } else {
-        setStatus("Deck: " + currentDeck.title + " — " + posText + " • Deck complet ✅", false);
-        setAudit("", false);
-      }
-    } else {
-      setStatus("Deck: " + currentDeck.title + " — " + posText, false);
-      setAudit("", false);
-    }
-
-    setControlsEnabled(true);
-  }
-
   function loadDeckById(deckId) {
     var meta = decksMeta.find(function (d) { return d.id === deckId; }) || decksMeta[0];
+
+    setControlsEnabled(false);
+    setStatus("Chargement du deck…", false);
+    setAudit("", false);
+
     return loadDeckFile(meta)
       .then(function (deck) {
         currentDeck = deck;
-        currentIndex = 0;
+
+        // ✅ reprise progression
+        currentIndex = Math.max(0, Math.min(loadSavedIndex(currentDeck.id), currentDeck.cards.length - 1));
+
         return tryLoadDeckRef(currentDeck.id);
       })
       .then(function (ref) {
         currentCoverage = ref ? computeCoverage(currentDeck, ref) : null;
-        render();
+        render(currentDeck, currentIndex, currentCoverage);
       });
   }
 
   if (deckSelect) {
     deckSelect.addEventListener("change", function (e) {
-      setControlsEnabled(false);
-      setStatus("Changement de deck…", false);
-      setAudit("", false);
-
       loadDeckById(e.target.value).catch(function (err) {
         console.error(err);
         setStatus("Erreur: " + err.message, true);
         setAudit("Erreur de chargement : vérifie le catalogue et les fichiers JSON.", true);
+        setControlsEnabled(false);
       });
     });
   }
@@ -361,19 +394,30 @@ document.addEventListener("DOMContentLoaded", function () {
     btnNext.addEventListener("click", function () {
       if (!currentDeck || currentDeck.cards.length === 0) return;
       currentIndex = (currentIndex + 1) % currentDeck.cards.length;
-      render();
+
+      // ✅ sauvegarde progression
+      saveIndex(currentDeck.id, currentIndex);
+
+      render(currentDeck, currentIndex, currentCoverage);
     });
   }
 
   if (btnRandom) {
     btnRandom.addEventListener("click", function () {
       if (!currentDeck || currentDeck.cards.length === 0) return;
+
       var n = currentDeck.cards.length;
       if (n === 1) return;
+
       var next = currentIndex;
       while (next === currentIndex) next = Math.floor(Math.random() * n);
+
       currentIndex = next;
-      render();
+
+      // ✅ sauvegarde progression
+      saveIndex(currentDeck.id, currentIndex);
+
+      render(currentDeck, currentIndex, currentCoverage);
     });
   }
 
